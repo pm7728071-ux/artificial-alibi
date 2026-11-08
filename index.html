@@ -901,6 +901,7 @@ async function aiBrain(text, history) {
 const EVIDENCE_04 = {
   camera: {
     label: 'SECTOR B CAMERA LOG',
+    detail: '02:14 · corridor empty · no engineer present',
     confront: 'The Sector B corridor camera. 02:14. Forty-one minutes of empty hallway. You told me you were down there with your hands in a coolant line.',
     reactions: [
       "That camera... it skips. The relay drops frames when the heaters cycle, everyone knows that.",
@@ -911,6 +912,7 @@ const EVIDENCE_04 = {
   },
   wrench: {
     label: 'BLOOD-STAINED WRENCH',
+    detail: 'Recovered at generator housing · partial print',
     confront: 'Your toolbox. Your stamp. Found against the generator housing with a partial print and blood in the knurling.',
     reactions: [
       "That is grease. Twenty-year-old grease and skin split from cold. You have never worked a winter shift, have you.",
@@ -921,6 +923,7 @@ const EVIDENCE_04 = {
   },
   drive: {
     label: 'MISSING HARD DRIVE',
+    detail: 'Lab archive bay 7 · serial scrubbed',
     confront: 'Archive bay seven. Empty cradle, serial scraped off with a blade. Nine years of cryo research, gone the same night the housing blew.',
     reactions: [
       "The drive has nothing to do with me. I fix pipes. Ask Vance what he was doing in the archive at two in the morning.",
@@ -1377,6 +1380,7 @@ async function coldOpen(C) {
 /* ---------- boot: title screen first ---------- */
 buildDossier();
 heartbeat();
+renderLocker();   // preload case 01 exhibits behind the splash
 S.caseId = 'c01'; S.guilty = true;
 LIES = CASES.c01.lies; EVIDENCE = CASES.c01.evidence; ACTIVE_PROMPT = CASES.c01.prompt;
 $('#btnBegin').onclick = () => { sfxClick(); buildDossier(); showScreen('dossier'); };
