@@ -2037,8 +2037,10 @@ function startExplore() {
   EX.loading = false;
   loadThree((ok) => {
     if (!ok) return exploreFallback('ENGINE UNAVAILABLE');
+    const probe = (() => { try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (err) { return false; } })();
+    if (!probe) return exploreFallback('WEBGL DISABLED IN THIS BROWSER');
     try { initExplore(); }
-    catch (e) { exploreFallback('NO WEBGL'); }
+    catch (e) { exploreFallback('INIT FAILED: ' + (e && e.message ? e.message : 'unknown')); }
   });
 }
 
