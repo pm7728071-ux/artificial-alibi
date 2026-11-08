@@ -297,7 +297,7 @@ button.go{border-color:#2c6b4e;color:var(--green)}
 
       <!-- vitals -->
       <div class="panel">
-        <header><b>BIOMETRIC LINK</b><span class="sp"></span><span class="hint">SUBJECT #04 · WRIST SENSOR</span><span class="badge" id="brainBadge">OFFLINE BRAIN</span></header>
+        <header><b>BIOMETRIC LINK</b><span class="sp"></span><span class="hint" id="bioLabel">SUBJECT #04 · WRIST SENSOR</span><span class="badge" id="brainBadge">OFFLINE BRAIN</span></header>
         <div class="vitals">
           <div class="bpmrow">
             <div class="bpm" id="bpm">78<small>BPM</small></div>
@@ -726,6 +726,8 @@ function setCase(id, opt) {
   const cn = $('#camNo'), cs = $('#camSubj');
   if (cn) cn.textContent = C.num.replace('#','');
   if (cs) cs.textContent = 'SUBJECT ' + C.num;
+  const bl = $('#bioLabel'); if (bl) bl.textContent = 'SUBJECT ' + C.num + ' · WRIST SENSOR';
+  document.title = 'ARTIFICIAL ALIBI // ' + C.num + ' ' + C.name.toUpperCase();
   $('#camTitle').textContent = 'CAM ' + C.num.replace('#', '') + ' — INTERROGATION ROOM';
   $('#log').innerHTML = '';
   $('#modal').classList.remove('on');
