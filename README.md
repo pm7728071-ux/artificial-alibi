@@ -66,3 +66,12 @@ contradiction buzzer. All WebAudio synthesis, no assets or network.
 - **🎙️ SPEAK** next to INTERROGATE uses `SpeechRecognition`: interim words stream into the
   input bar, and the final transcript interrogates automatically. Gracefully disabled where
   the browser has no recognition support; mic permission errors surface in the transcript log.
+
+## 2.3 — THE ROOM (photoreal lineup)
+
+All three suspects now sit together in one dim interrogation room, drawn from generated
+photographic portraits (`assets/*.jpg`, 560x700, ~48KB each). The wall is lit by a single
+overhead lamp, breathing is animated per portrait, and hovering a subject punches red
+surveillance interference into their frame. Clicking a subject opens their case. Portraits
+also appear as dossier thumbnails and as the biometric ID badge, which swaps per case.
+Deep link: `#room`.

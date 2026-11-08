@@ -220,6 +220,31 @@ button.go{border-color:#2c6b4e;color:var(--green)}
 .mic.listening{border-color:#e07070;color:#ffb3b3;animation:micpulse 1s infinite}
 .mic:disabled{opacity:.4;cursor:not-allowed}
 @keyframes micpulse{0%,100%{box-shadow:0 0 0 0 rgba(224,112,112,.35)}50%{box-shadow:0 0 0 6px rgba(224,112,112,0)}}
+/* ================= THE ROOM — photoreal lineup ================= */
+.roomscene{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(8px,1.6vw,22px);align-items:end;
+  padding:clamp(14px,3vw,34px) clamp(10px,2vw,26px) 0;border:1px solid #16222e;
+  background:radial-gradient(ellipse 60% 50% at 50% 0%,#16232b 0%,#0a1114 55%,#05080a 100%);overflow:hidden}
+.roomscene:before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(180deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px);opacity:.5}
+.roomscene:after{content:'';position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 120px 40px rgba(0,0,0,.85)}
+.sit{position:relative;cursor:pointer;transition:transform .2s}
+.sit:hover{transform:translateY(-4px)}
+.sit img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;filter:saturate(.72) contrast(1.08) brightness(.9);
+  border:1px solid #1d2b36;animation:breathe 5.6s ease-in-out infinite}
+.sit:hover img{filter:saturate(.9) contrast(1.12) brightness(1);border-color:var(--gold)}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.014)}}
+.sit .tint{position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;
+  background:linear-gradient(180deg,rgba(120,180,200,.08),transparent 40%,rgba(0,0,0,.35))}
+.sit:hover .tint{background:linear-gradient(180deg,rgba(255,60,60,.10),transparent 45%,rgba(120,0,0,.20))}
+.sit .plate{margin-top:6px;text-align:center;font-size:9px;letter-spacing:1.6px;color:var(--ink-dim);line-height:1.7}
+.sit .plate b{display:block;color:var(--ink);font-weight:400;letter-spacing:2px;font-size:10.5px}
+.table{grid-column:1/-1;height:clamp(10px,1.6vw,18px);margin:0 -40px;
+  background:linear-gradient(180deg,#182229,#0b1115);border-top:1px solid #26343d;box-shadow:0 -8px 30px rgba(0,0,0,.7)}
+.roomhint{text-align:center;font-size:9px;letter-spacing:2.4px;color:#7fd4a8;margin-top:14px}
+.badge-photo{width:46px;height:46px;object-fit:cover;border:1px solid #1d2b36;filter:saturate(.75) brightness(.95);animation:breathe 5.6s ease-in-out infinite}
+.thumb{display:block;width:100%;height:104px;object-fit:cover;object-position:center 22%;margin:-16px -16px 12px;width:calc(100% + 32px);filter:saturate(.7) contrast(1.05) brightness(.85)}
+.case:hover .thumb{filter:saturate(.95) contrast(1.1) brightness(1)}
 </style>
 </head>
 <body>
@@ -233,11 +258,25 @@ button.go{border-color:#2c6b4e;color:var(--green)}
     <div class="sec-ind"><i></i>SECURE CONNECTION ESTABLISHED</div>
     <div class="menu">
       <button id="btnBegin">START INVESTIGATION<small>CASE FILES &middot; THREE SUSPECTS &middot; ONE LIAR</small></button>
+      <button id="btnRoom">ENTER THE ROOM<small>ALL THREE SUBJECTS &middot; LIVE SURVEILLANCE</small></button>
       <button id="btnCases">SELECT CASE FILE<small>THREE SUSPECTS &middot; THREE CHARGES</small></button>
       <button id="btnHow">HOW TO PLAY / BRIEFING<small>PROTOCOL &middot; EVIDENCE &middot; VERDICT</small></button>
     </div>
     <div class="title-line"></div>
     <div class="title-sub" style="letter-spacing:2px">BUILD 2.0 &middot; ARGUS INTERNAL &middot; DO NOT DISTRIBUTE</div>
+  </div>
+</div>
+
+<!-- ============ THE ROOM ============ -->
+<div class="overlay" id="theRoom">
+  <div class="inner" style="width:min(1080px,96vw)">
+    <div class="title-sub" style="text-align:left">OBSERVATION ROOM &middot; ALL SUBJECTS SEATED</div>
+    <h1 class="title-big" style="font-size:clamp(18px,3vw,32px);text-align:left;letter-spacing:5px">THE ROOM</h1>
+    <div class="title-line"></div>
+    <div class="roomscene" id="roomScene"></div>
+    <div class="roomhint">SELECT A SUBJECT TO BEGIN INTERROGATION</div>
+    <div class="title-line"></div>
+    <button class="navbtn" id="roomBack">&#8592; BACK TO TERMINAL</button>
   </div>
 </div>
 
@@ -305,6 +344,7 @@ button.go{border-color:#2c6b4e;color:var(--green)}
         <header><b>BIOMETRIC LINK</b><span class="sp"></span><span class="hint" id="bioLabel">SUBJECT #04 · WRIST SENSOR</span><span class="badge" id="brainBadge">OFFLINE BRAIN</span></header>
         <div class="vitals">
           <div class="bpmrow">
+            <img class="badge-photo" id="bioPhoto" src="assets/vance.jpg" alt="">
             <div class="bpm" id="bpm">78<small>BPM</small></div>
             <div class="ecg"><svg viewBox="0 0 320 44" preserveAspectRatio="none"><polyline id="ecgLine" fill="none" stroke="#5fd39a" stroke-width="1.6" points="0,22 320,22"/></svg></div>
           </div>
@@ -811,10 +851,14 @@ function setCase(id, opt) {
   S.contraKeys = new Set(); S.evidence = {};
   Object.keys(C.evidence).forEach(k => S.evidence[k] = false);
   stopSpeech();
+  ['titleScreen', 'dossier', 'theRoom', 'briefing'].forEach(s => {
+    const el2 = document.getElementById(s); if (el2) el2.classList.remove('on');
+  });
   $('#subjNo').textContent = C.num;
   const cn = $('#camNo'), cs = $('#camSubj');
   if (cn) cn.textContent = C.num.replace('#','');
   if (cs) cs.textContent = 'SUBJECT ' + C.num;
+  const bp = $('#bioPhoto'); if (bp && C.photo) bp.src = C.photo;
   const bl = $('#bioLabel'); if (bl) bl.textContent = 'SUBJECT ' + C.num + ' · WRIST SENSOR';
   document.title = 'ARTIFICIAL ALIBI // ' + C.num + ' ' + C.name.toUpperCase();
   $('#camTitle').textContent = 'CAM ' + C.num.replace('#', '') + ' — INTERROGATION ROOM';
@@ -834,7 +878,8 @@ function buildDossier() {
     const C = CASES[id];
     const d = document.createElement('div');
     d.className = 'case'; d.dataset.case = id;
-    d.innerHTML = '<div class="diff ' + C.diffClass + '">' + C.diff + '</div>' +
+    d.innerHTML = '<img class="thumb" src="' + (C.photo || '') + '" alt="">' +
+      '<div class="diff ' + C.diffClass + '">' + C.diff + '</div>' +
       '<div class="no">CASE FILE ' + C.no + '</div>' +
       '<h3>' + C.num + ' — ' + C.name + '</h3>' +
       '<div class="role">' + C.role + '</div>' +
@@ -1169,6 +1214,28 @@ CASES.c01 = {
   }
 };
 
+/* ---------------- photoreal lineup room ---------------- */
+CASES.c01.photo = 'assets/vance.jpg';
+CASES.c02.photo = 'assets/rostova.jpg';
+CASES.c03.photo = 'assets/k7.jpg';
+
+function buildRoom() {
+  const box = $('#roomScene'); if (!box) return;
+  box.innerHTML = '';
+  ['c01', 'c02', 'c03'].forEach(id => {
+    const C = CASES[id];
+    const d = document.createElement('div');
+    d.className = 'sit'; d.dataset.case = id; d.title = 'Interrogate ' + C.name;
+    d.innerHTML = '<img src="' + C.photo + '" alt="Suspect ' + C.num + '">' +
+      '<div class="tint"></div>' +
+      '<div class="plate"><b>' + C.no + ' \u00b7 ' + C.num + '</b>' +
+      C.name.toUpperCase() + '<br>' + C.role + '</div>';
+    d.onclick = () => { sfxClick(); setCase(id); };
+    box.appendChild(d);
+  });
+  const t = document.createElement('div'); t.className = 'table'; box.appendChild(t);
+}
+
 /* ---------------- per-case probing topics ---------------- */
 CASES.c01.topics = [
   { re:/wrench|blood/, d:16, lines:["Blood? It is grease and rust. You put a wrench in a housing full of hot metal and tell me what colour your hands come out."] },
@@ -1477,14 +1544,17 @@ initMic();
 renderLocker();   // preload case 01 exhibits behind the splash
 $('#btnBegin').onclick = () => { sfxClick(); buildDossier(); showScreen('dossier'); };
 $('#btnCases').onclick = () => { sfxClick(); buildDossier(); showScreen('dossier'); };
+$('#btnRoom').onclick = () => { sfxClick(); buildRoom(); showScreen('theRoom'); };
 $('#btnHow').onclick = () => { sfxClick(); $('#briefing').classList.add('on'); };
 $('#briefClose').onclick = () => { sfxClick(); $('#briefing').classList.remove('on'); };
+$('#roomBack').onclick = () => { sfxClick(); showScreen('titleScreen'); };
 $('#dossBack').onclick = () => { sfxClick(); $('#dossier').classList.remove('on'); showScreen('titleScreen'); };
 $('#navFiles').onclick = () => { sfxClick(); buildDossier(); showScreen('dossier'); };
 /* ---------- deep links: #c01 #c02 #c03 #random ---------- */
 (function deepLink() {
   const tag = (location.hash || '').replace('#', '').toLowerCase();
   if (/^c0[123]$/.test(tag)) { setCase(tag); }
+  else if (tag === 'room') { buildRoom(); showScreen('theRoom'); }
   else if (tag === 'random') {
     const ids = Object.keys(CASES), id = ids[Math.floor(Math.random() * ids.length)];
     setCase(id, { randomized: true, guilty: Math.random() < 0.5 });
