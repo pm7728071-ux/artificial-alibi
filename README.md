@@ -117,3 +117,7 @@ move buttons and drag-look. Collision keeps you on the near side of the table.
 
 Engine loads from a CDN with no key and no cost. If WebGL or the CDN is unavailable the game
 falls back to the 2D observation room and says so in the transcript, so it never dead-ends.
+
+Movement is available even without WebGL: the observation room responds to **A/D, arrow keys
+or drag** with layered parallax and per-suspect depth, so it stays playable on machines where
+the GPU path is blocked.

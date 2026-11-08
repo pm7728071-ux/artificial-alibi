@@ -270,6 +270,12 @@ button.go{border-color:#2c6b4e;color:var(--green)}
 .extouch button{pointer-events:auto;width:64px;height:64px;border-radius:50%;border:1px solid rgba(224,168,71,.4);
  background:rgba(8,14,18,.72);color:var(--gold);font-size:18px}
 @media (hover:none){.extouch{display:flex}}
+/* ---------- 2.5D walkable room (works without WebGL) ---------- */
+.roomscene{perspective:1000px;perspective-origin:50% 40%;overflow:visible}
+.roomscene .sit{transform-style:preserve-3d;will-change:transform;transition:transform .12s linear}
+.roomscene:after{content:'';position:absolute;inset:-40% -10%;pointer-events:none;
+ background:radial-gradient(ellipse at 50% 45%,transparent 30%,rgba(3,6,10,.85) 100%)}
+.walkhint{font-size:9px;letter-spacing:2px;color:#6f7d85;text-align:center;margin-top:6px}
 </style>
 </head>
 <body>
@@ -2044,7 +2050,41 @@ function startExplore() {
   });
 }
 
-function openObservationRoom() { try { buildRoom(); showScreen('theRoom'); } catch (e) {} }
+/* ---------- 2.5D parallax walk: drag or WASD to move through the room ---------- */
+const PX = { on: false, x: 0, target: 0, keys: {}, drag: null };
+function initParallaxRoom() {
+  const scene = $('#roomScene'); if (!scene) return;
+  if (!PX.on) {
+    PX.on = true;
+    window.addEventListener('keydown', (e) => {
+      const k = e.key.toLowerCase();
+      if (!PX.on) return;
+      if (k === 'a' || k === 'arrowleft') { PX.target = clamp(PX.target - 0.22, -1, 1); e.preventDefault(); }
+      if (k === 'd' || k === 'arrowright') { PX.target = clamp(PX.target + 0.22, -1, 1); e.preventDefault(); }
+    });
+    scene.addEventListener('pointerdown', (e) => { PX.drag = { x: e.clientX, start: PX.target }; });
+    window.addEventListener('pointermove', (e) => {
+      if (!PX.drag) return;
+      PX.target = clamp(PX.drag.start - (e.clientX - PX.drag.x) / 240, -1, 1);
+    });
+    window.addEventListener('pointerup', () => { PX.drag = null; });
+    const loop = () => {
+      requestAnimationFrame(loop);
+      if (!PX.on) return;
+      PX.x += (PX.target - PX.x) * 0.12;
+      const sits = scene.querySelectorAll('.sit');
+      sits.forEach((el, i) => {
+        const depth = 26 + i * 4;
+        el.style.transform = 'translate3d(' + (-PX.x * depth) + 'px,0,' + (PX.x > 0 ? -6 : 6) * i + 'px) rotateY(' + (-PX.x * 4) + 'deg)';
+      });
+      scene.style.backgroundPosition = (50 + PX.x * 6) + '% 50%';
+    };
+    loop();
+  }
+  PX.on = true;
+}
+
+function openObservationRoom() { try { initParallaxRoom(); buildRoom(); showScreen('theRoom'); } catch (e) {} }
 
 function exploreFallback(why) {
   try { sysLog('3D ROOM UNAVAILABLE (' + why + ') — SWITCHING TO OBSERVATION ROOM'); } catch (e) {}

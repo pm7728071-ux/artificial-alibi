@@ -12,6 +12,14 @@ const w=dom.window,$=s=>w.document.querySelector(s);const wait=ms=>new Promise(r
  console.log('explore requested, closed after failure:', !$('#explore').classList.contains('on'));
  console.log('fallback room shown:', $('#theRoom').classList.contains('on'));
  console.log('log mentions fallback:', /3D ROOM UNAVAILABLE/.test($('#log').textContent));
+ w.__AA.openObservationRoom(); await wait(150);
+ const sits=w.document.querySelectorAll('.sit');
+ console.log('parallax room open:', $('#theRoom').classList.contains('on'), '| subjects:', sits.length);
+ w.dispatchEvent(new w.KeyboardEvent('keydown',{key:'d'}));
+ await wait(400);
+ const moved = Array.from(sits).map(s=>s.style.transform).filter(Boolean).length;
+ console.log('subjects shifted when walking:', moved, 'of', sits.length);
+ console.log('transform sample:', sits[0].style.transform);
  w.__AA.exitExplore(); await wait(50);
  console.log('exit is safe when inactive:', w.__AA.EX.active === false);
  console.log('errors:', errs.length, errs.slice(0,2));
