@@ -215,6 +215,11 @@ button.go{border-color:#2c6b4e;color:var(--green)}
   background:linear-gradient(90deg,rgba(255,30,30,.10),transparent 40%,rgba(255,30,30,.12));mix-blend-mode:screen}
 .monitor .glitch.hot{opacity:1;animation:gl 90ms steps(2,end) infinite}
 @keyframes gl{0%{transform:translateY(0)}50%{transform:translateY(-1px)}100%{transform:translateY(1px)}}
+.mic{background:#0b1114;border:1px solid var(--line);color:var(--ink);font:inherit;font-size:10px;letter-spacing:2px;padding:0 14px;cursor:pointer;white-space:nowrap;transition:.15s}
+.mic:hover{border-color:var(--gold);color:var(--gold)}
+.mic.listening{border-color:#e07070;color:#ffb3b3;animation:micpulse 1s infinite}
+.mic:disabled{opacity:.4;cursor:not-allowed}
+@keyframes micpulse{0%,100%{box-shadow:0 0 0 0 rgba(224,112,112,.35)}50%{box-shadow:0 0 0 6px rgba(224,112,112,0)}}
 </style>
 </head>
 <body>
@@ -318,6 +323,7 @@ button.go{border-color:#2c6b4e;color:var(--green)}
         <div class="inputbar">
           <input id="say" autocomplete="off" placeholder="Ask the suspect something…" maxlength="400">
           <button class="primary" id="ask">INTERROGATE</button>
+          <button class="mic" id="mic" title="Speak your question">&#127908; SPEAK</button>
         </div>
       </div>
     </div>
@@ -496,8 +502,15 @@ const evCount = () => Object.values(S.evidence).filter(Boolean).length;
     x.strokeStyle = '#2d393d'; x.lineWidth = 2;
     x.beginPath(); x.moveTo(hx - ex - 9, ey - 13); x.lineTo(hx - ex + 9, ey - 11); x.stroke();
     x.beginPath(); x.moveTo(hx + ex - 9, ey - 11); x.lineTo(hx + ex + 9, ey - 13); x.stroke();
-    x.strokeStyle = '#5a6a6c';
-    x.beginPath(); x.moveTo(hx - 11, hy + 25); x.quadraticCurveTo(hx, hy + 25 + (hot ? 3 : 1), hx + 11, hy + 25); x.stroke();
+    const mouthOpen = SPEECH.speaking ? (0.30 + 0.70 * Math.abs(Math.sin(t / 92))) : 0;
+    if (mouthOpen > 0.05) {
+      x.beginPath(); x.ellipse(hx, hy + 27, 7.4, 1.4 + mouthOpen * 4.8, 0, 0, Math.PI * 2);
+      x.fillStyle = '#1d2629'; x.fill();
+      x.strokeStyle = '#4d5f61'; x.lineWidth = 1.6; x.stroke();
+    } else {
+      x.strokeStyle = '#5a6a6c'; x.lineWidth = 2;
+      x.beginPath(); x.moveTo(hx - 11, hy + 25); x.quadraticCurveTo(hx, hy + 25 + (hot ? 3 : 1), hx + 11, hy + 25); x.stroke();
+    }
 
     // sweat when hot
     if (hot && Math.random() < .07) sweat.push({ x: hx - 34 + Math.random() * 14, y: hy - 22, r: 1.6 + Math.random() * 1.4, v: .35 + Math.random() * .5 });
@@ -630,7 +643,8 @@ function addLine(who, text, cls) {
 function sysLog(text) { addLine('SYS', text, 'system'); }
 async function typeLine(text) {
   sfxClick();
-  const line = addLine('#04', '', 'suspect');
+  speakLine(text);
+  const line = addLine((CASES[S.caseId] || CASES.c01).num, '', 'suspect');
   const target = line.querySelector('.txt');
   line.dataset.typing = '1';
   for (let i = 0; i < text.length; i++) {
@@ -681,6 +695,80 @@ function tone(freq, dur, type, vol, slideTo) {
 const sfxClick = () => tone(1200 + Math.random() * 260, 0.02, 'square', 0.022);
 const sfxBeep  = () => { tone(880, 0.05, 'sine', 0.05); setTimeout(() => tone(1180, 0.05, 'sine', 0.04), 60); };
 const sfxBuzz  = () => { tone(148, 0.30, 'sawtooth', 0.055, 82); setTimeout(() => tone(112, 0.22, 'square', 0.04), 90); };
+/* ============================================================
+   VOICE ACTING — Web Speech synthesis, one persona per suspect
+   ============================================================ */
+const VOICES = {
+  c01: { pitch: 0.45, rate: 0.88 },   // Marcus Vance — low, gravelly
+  c02: { pitch: 1.35, rate: 1.06 },   // Dr. Rostova   — cold, crisp
+  c03: { pitch: 0.72, rate: 0.78 }    // Unit K-7      — flat, robotic
+};
+const SPEECH = { supported: typeof window !== 'undefined' && 'speechSynthesis' in window, speaking: false, mouth: 0, u: null };
+
+function pickVoice() {
+  try {
+    const vs = window.speechSynthesis.getVoices() || [];
+    return vs.find(v => /en[-_]GB/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null;
+  } catch (e) { return null; }
+}
+
+function speakLine(text) {
+  if (!SFX.on || !SPEECH.supported) return;
+  try {
+    window.speechSynthesis.cancel();
+    const clean = String(text).replace(/\[[^\]]*\]/g, ' ').trim();
+    if (!clean) return;
+    const u = new SpeechSynthesisUtterance(clean);
+    const v = VOICES[S.caseId] || VOICES.c01;
+    u.pitch = v.pitch; u.rate = v.rate; u.volume = 1;
+    const voice = pickVoice(); if (voice) u.voice = voice;
+    u.onstart = () => { SPEECH.speaking = true; };
+    u.onend = () => { SPEECH.speaking = false; };
+    u.onerror = () => { SPEECH.speaking = false; };
+    u.onboundary = () => { SPEECH.mouth = 1; };
+    SPEECH.u = u;
+    window.speechSynthesis.speak(u);
+  } catch (e) { SPEECH.speaking = false; }
+}
+
+/* ============================================================
+   DETECTIVE MICROPHONE — Web Speech recognition
+   ============================================================ */
+const REC = { rec: null, listening: false };
+function initMic() {
+  const btn = $('#mic'); if (!btn) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { btn.disabled = true; btn.textContent = '\uD83C\uDF99 SPEAK (N/A)'; btn.title = 'Speech recognition is not supported in this browser'; return; }
+  const r = new SR();
+  r.lang = 'en-US'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
+  r.onstart = () => { REC.listening = true; btn.classList.add('listening'); };
+  r.onend = () => { REC.listening = false; btn.classList.remove('listening'); };
+  r.onerror = (e) => {
+    REC.listening = false; btn.classList.remove('listening');
+    if (e && e.error === 'not-allowed') sysLog('MIC BLOCKED - allow microphone access for this site');
+  };
+  r.onresult = (ev) => {
+    let txt = '';
+    for (let i = 0; i < ev.results.length; i++) txt += ev.results[i][0].transcript;
+    txt = txt.trim();
+    if (txt) $('#say').value = txt;
+    const last = ev.results[ev.results.length - 1];
+    if (last && last.isFinal && txt) { REC.listening = false; btn.classList.remove('listening'); ask(); }
+  };
+  REC.rec = r;
+  btn.onclick = () => {
+    sfxClick();
+    if (REC.listening) { try { r.stop(); } catch (e) {} return; }
+    try { r.start(); } catch (e) { sysLog('MIC UNAVAILABLE - ' + ((e && e.message) || 'cannot start')); }
+  };
+}
+
+function stopSpeech() {
+  SPEECH.speaking = false; SPEECH.mouth = 0;
+  if (!SPEECH.supported) return;
+  try { window.speechSynthesis.cancel(); } catch (e) {}
+}
+
 
 /* heartbeat monitor — rate follows the suspect's BPM */
 let hbTimer = null;
@@ -722,6 +810,7 @@ function setCase(id, opt) {
   S.over = false; S.busy = false; S.alibiTold = 0; S.vanceBlamed = 0; S.lastSpike = 0;
   S.contraKeys = new Set(); S.evidence = {};
   Object.keys(C.evidence).forEach(k => S.evidence[k] = false);
+  stopSpeech();
   $('#subjNo').textContent = C.num;
   const cn = $('#camNo'), cs = $('#camSubj');
   if (cn) cn.textContent = C.num.replace('#','');
@@ -1332,7 +1421,7 @@ function runLogicTests() {
   return { pass, total: rows.length };
 }
 
-if (typeof window !== 'undefined') window.__AA = { S, CASES, setCase, buildDossier, offlineBrain, runLogicTests, report, contraAdd, monitorLive: true };
+if (typeof window !== 'undefined') window.__AA = { S, CASES, setCase, buildDossier, offlineBrain, runLogicTests, report, contraAdd, monitorLive: true, SPEECH, REC, speakLine, stopSpeech };
 (function wireDebug(){
   const btn = $('#dbgBtn'), panel = $('#dbg');
   if (!btn || !panel) return;
@@ -1384,6 +1473,7 @@ S.caseId = 'c01'; S.guilty = true;
 LIES = CASES.c01.lies; EVIDENCE = CASES.c01.evidence; ACTIVE_PROMPT = CASES.c01.prompt;
 buildDossier();
 heartbeat();
+initMic();
 renderLocker();   // preload case 01 exhibits behind the splash
 $('#btnBegin').onclick = () => { sfxClick(); buildDossier(); showScreen('dossier'); };
 $('#btnCases').onclick = () => { sfxClick(); buildDossier(); showScreen('dossier'); };
@@ -1405,6 +1495,7 @@ $('#navSfx').onclick = () => {
   SFX.on = !SFX.on;
   $('#navSfx').textContent = 'SOUND FX: ' + (SFX.on ? 'ON' : 'OFF');
   $('#navSfx').classList.toggle('on', SFX.on);
+  if (!SFX.on) stopSpeech();
   if (SFX.on) sfxClick();
 };
 </script>

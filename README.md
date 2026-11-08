@@ -56,3 +56,13 @@ interrogation room who breathes, blinks, shifts posture and glances away. Above 
 when a contradiction lands, they sweat, jitter, glance off-camera and the feed cuts to red
 surveillance interference. Heartbeat audio follow the BPM, alongside key clicks and the
 contradiction buzzer. All WebAudio synthesis, no assets or network.
+
+## 2.2 — Voice acting, lip-sync, microphone
+
+- Every suspect reply is spoken via `speechSynthesis` when SOUND FX is on, with a per-suspect
+  voice: Vance low and gravelly (pitch 0.45 / rate 0.88), Rostova cold and crisp (1.35 / 1.06),
+  K-7 flat and robotic (0.72 / 0.78).
+- The avatar's mouth opens and closes in rhythm while speaking (boundary events + envelope).
+- **🎙️ SPEAK** next to INTERROGATE uses `SpeechRecognition`: interim words stream into the
+  input bar, and the final transcript interrogates automatically. Gracefully disabled where
+  the browser has no recognition support; mic permission errors surface in the transcript log.
