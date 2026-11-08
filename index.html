@@ -1389,6 +1389,16 @@ $('#btnHow').onclick = () => { sfxClick(); $('#briefing').classList.add('on'); }
 $('#briefClose').onclick = () => { sfxClick(); $('#briefing').classList.remove('on'); };
 $('#dossBack').onclick = () => { sfxClick(); $('#dossier').classList.remove('on'); showScreen('titleScreen'); };
 $('#navFiles').onclick = () => { sfxClick(); buildDossier(); showScreen('dossier'); };
+/* ---------- deep links: #c01 #c02 #c03 #random ---------- */
+(function deepLink() {
+  const tag = (location.hash || '').replace('#', '').toLowerCase();
+  if (/^c0[123]$/.test(tag)) { setCase(tag); }
+  else if (tag === 'random') {
+    const ids = Object.keys(CASES), id = ids[Math.floor(Math.random() * ids.length)];
+    setCase(id, { randomized: true, guilty: Math.random() < 0.5 });
+  }
+})();
+
 $('#navSfx').onclick = () => {
   SFX.on = !SFX.on;
   $('#navSfx').textContent = 'SOUND FX: ' + (SFX.on ? 'ON' : 'OFF');
