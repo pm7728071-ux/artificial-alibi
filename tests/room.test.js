@@ -7,7 +7,7 @@ const dom=new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'h
 const w=dom.window,$=s=>w.document.querySelector(s);const wait=ms=>new Promise(r=>setTimeout(r,ms));
 (async()=>{
  await wait(500);
- $('#btnRoom').click(); await wait(150);
+ w.__AA.openObservationRoom(); await wait(150);
  const sits=w.document.querySelectorAll('.sit');
  console.log('room open:', $('#theRoom').classList.contains('on'), '| subjects seated:', sits.length);
  console.log('photos:', Array.from(sits).map(s=>s.querySelector('img').getAttribute('src')).join(' | '));

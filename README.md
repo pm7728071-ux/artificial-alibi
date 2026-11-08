@@ -106,3 +106,14 @@ carries its own pitch and rate from a model:
   instead of appearing in digital silence.
 - **Casting** — legacy engines (eSpeak, Pico, Zarvox and friends) are penalised heavily;
   network/neural voices are preferred.
+
+## 3.2 — Walkable 3D room
+
+`ENTER THE ROOM` now loads a first-person Three.js scene: a lit interrogation room with a
+hanging lamp, metal table, three chairs and the suspects seated behind it as lit portrait
+figures that turn toward you. **WASD** to walk, **mouse** (or drag) to look, **E** to
+interrogate whoever you're standing in front of, **Esc** to leave. Touch devices get on-screen
+move buttons and drag-look. Collision keeps you on the near side of the table.
+
+Engine loads from a CDN with no key and no cost. If WebGL or the CDN is unavailable the game
+falls back to the 2D observation room and says so in the transcript, so it never dead-ends.

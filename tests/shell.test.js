@@ -10,7 +10,7 @@ const w=dom.window,$=s=>w.document.querySelector(s);const wait=ms=>new Promise(r
  await wait(500);
  console.log('continue hidden with no save:', $('#btnCont').style.display === 'none');
  $('#btnRoom').click(); await wait(120);
- w.document.querySelectorAll('.sit')[0].click(); await wait(200);
+ w.__AA.openObservationRoom(); await wait(120); w.document.querySelectorAll('.sit')[0].click(); await wait(250);
  console.log('save recorded:', w.localStorage.getItem('alibi.save') !== null, '| case:', w.__AA.S.caseId);
  $('#say').value='Where were you that night?'; $('#ask').click(); await wait(2100);
  const sp=w.__spoken;
