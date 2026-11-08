@@ -48,3 +48,11 @@ Headless: `npm install && npm test`
 - **Nav**: ← CASE FILES returns to the docket at any time; SOUND FX toggle drives synthesised keyboard clicks, BPM beeps and a contradiction buzzer (WebAudio, no assets).
 
 Tests: `npm test` runs the nine logic checks plus the screen/case/verdict flow.
+
+## 2.1 — Live suspect monitor
+
+The CAM feed is now a full surveillance monitor drawn on canvas: a seated suspect in a lit
+interrogation room who breathes, blinks, shifts posture and glances away. Above 100 BPM or
+when a contradiction lands, they sweat, jitter, glance off-camera and the feed cuts to red
+surveillance interference. Heartbeat audio follow the BPM, alongside key clicks and the
+contradiction buzzer. All WebAudio synthesis, no assets or network.
