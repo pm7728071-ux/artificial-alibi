@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARTIFICIAL ALIBI // SUSPECT #04</title>
+<style>
+:root{
+  --bg:#05070a; --panel:#0a0f14; --panel-2:#0d131a; --line:#1b2733;
+  --amber:#d8a047; --amber-dim:#8a6730; --green:#5fd39a; --red:#e05252;
+  --ink:#c7d3d8; --ink-dim:#6d7d87; --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Courier New",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(120% 100% at 50% 0%, #0b1218 0%, #05070a 60%, #030405 100%);
+  color:var(--ink); font-family:var(--mono); font-size:13px; line-height:1.55;
+  overflow:hidden;
+}
+/* CRT overlay */
+body::after{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:99;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px);
+  mix-blend-mode:multiply; opacity:.55;
+}
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:98;
+  background:radial-gradient(90% 70% at 50% 45%, transparent 40%, rgba(0,0,0,.75) 100%);
+}
+.screen{height:100%;display:grid;grid-template-rows:auto 1fr;gap:0;padding:14px 16px 12px}
+/* ---------- camera header ---------- */
+.cam{
+  border:1px solid var(--line); background:linear-gradient(180deg,#0b1319,#070b0f);
+  border-radius:3px; display:grid; grid-template-columns:200px 1fr auto; align-items:center;
+  gap:14px; padding:8px 12px; margin-bottom:10px; position:relative; overflow:hidden;
+}
+.cam .feed{position:relative;height:46px;border:1px solid #16222e;background:#03060a;overflow:hidden}
+.cam canvas{width:100%;height:100%;display:block;image-rendering:pixelated;opacity:.85}
+.cam .label{position:absolute;left:6px;top:4px;font-size:9px;letter-spacing:1.4px;color:#9fb0ba}
+.cam .rec{position:absolute;right:6px;top:4px;font-size:9px;letter-spacing:1.4px;color:var(--red);display:flex;align-items:center;gap:4px}
+.cam .rec i{width:6px;height:6px;background:var(--red);border-radius:50%;animation:blink 1.3s steps(2,end) infinite}
+@keyframes blink{50%{opacity:0}}
+.cam .meta{min-width:0}
+.cam h1{font-size:15px;letter-spacing:2.6px;color:var(--amber);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cam .sub{font-size:10px;color:var(--ink-dim);letter-spacing:1.3px;margin-top:2px}
+.cam .ts{font-size:10.5px;color:var(--ink-dim);text-align:right;letter-spacing:.8px}
+/* ---------- layout ---------- */
+.grid{display:grid;grid-template-columns:1fr 300px;gap:12px;min-height:0}
+.col{display:grid;gap:10px;min-height:0}
+.panel{border:1px solid var(--line);background:var(--panel);border-radius:3px;display:flex;flex-direction:column;min-height:0;position:relative}
+.panel > header{
+  font-size:9.5px;letter-spacing:1.6px;color:var(--amber-dim);padding:7px 10px;
+  border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;flex:none;
+  background:linear-gradient(180deg,#0b1116,#080d12);
+}
+.panel > header b{color:var(--amber);font-weight:600}
+.panel > header .sp{flex:1}
+.panel > header .hint{color:var(--ink-dim);letter-spacing:.5px;font-size:9px}
+/* ---------- vitals ---------- */
+.vitals{padding:10px 12px 12px;flex:none}
+.bpmrow{display:flex;align-items:flex-end;gap:10px}
+.bpm{font-size:38px;font-weight:700;letter-spacing:-1px;color:var(--green);line-height:1;font-variant-numeric:tabular-nums}
+.bpm.warn{color:var(--amber)}
+.bpm.crit{color:var(--red);animation:pulse .9s infinite}
+@keyframes pulse{50%{opacity:.55}}
+.bpm small{font-size:11px;letter-spacing:1.6px;margin-left:4px;color:var(--ink-dim);font-weight:400}
+.ecg{flex:1;height:44px;min-width:0}
+.ecg svg{width:100%;height:100%;display:block}
+.state{font-size:9.5px;letter-spacing:1.3px;color:var(--ink-dim);margin-top:6px;display:flex;justify-content:space-between;gap:8px}
+.state b{color:var(--ink)}
+/* ---------- transcript ---------- */
+.log{overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-height:0;scrollbar-width:thin}
+.log::-webkit-scrollbar{width:6px}
+.log::-webkit-scrollbar-thumb{background:#1b2733;border-radius:3px}
+.line{display:grid;grid-template-columns:58px 1fr;gap:8px;animation:in .18s ease}
+@keyframes in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.who{font-size:9.5px;letter-spacing:1px;color:var(--ink-dim);padding-top:3px;text-align:right}
+.line.suspect .who{color:var(--amber)}
+.line.detective .who{color:#5f9bd3}
+.line.system .who{color:var(--ink-dim)}
+.line.system .txt{color:var(--ink-dim);font-style:italic}
+.txt{white-space:pre-wrap;word-break:break-word}
+.line.suspect .txt{color:#e3d9c6}
+.line.detective .txt{color:#cfe0e6}
+.typing{color:var(--amber);max-width:60px}
+.typing::after{content:"▌";animation:blink 1s steps(2) infinite}
+/* ---------- input ---------- */
+.inputbar{border-top:1px solid var(--line);padding:9px 10px;display:flex;gap:8px;flex:none;background:#080d12}
+.inputbar input{
+  flex:1;min-width:0;background:#03070b;border:1px solid #1b2733;color:#dbe6ea;
+  font-family:var(--mono);font-size:12.5px;padding:9px 11px;border-radius:2px;outline:none;
+}
+.inputbar input:focus{border-color:var(--amber-dim);box-shadow:0 0 0 1px #d8a04722 inset}
+.inputbar input::placeholder{color:#3f4d57}
+button{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:1.4px;cursor:pointer;border-radius:2px;
+  border:1px solid #2a3a49;background:linear-gradient(180deg,#131c25,#0c141b);color:#b9c8cf;
+  padding:8px 12px;transition:.14s;white-space:nowrap;
+}
+button:hover{border-color:var(--amber-dim);color:var(--amber);background:linear-gradient(180deg,#1a2530,#101a23)}
+button:active{transform:translateY(1px)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.primary{border-color:#7a5c22;color:var(--amber);background:linear-gradient(180deg,#241b0c,#150f06)}
+button.danger{border-color:#5c2626;color:#e07474}
+button.go{border-color:#2c6b4e;color:var(--green)}
+/* ---------- evidence ---------- */
+.evidence{display:flex;flex-direction:column;gap:8px;padding:10px;overflow-y:auto;min-height:0}
+.ev{
+  display:grid;grid-template-columns:auto 1fr;gap:9px;align-items:start;text-align:left;padding:9px 10px;
+  border:1px solid #1b2733;background:#070c11;border-radius:2px;color:var(--ink);cursor:pointer;
+  transition:.15s;position:relative;
+}
+.ev:hover{border-color:var(--amber-dim);background:#0b1218;transform:translateX(1px)}
+.ev.used{opacity:.42;border-style:dashed}
+.ev .ico{color:var(--amber);font-size:14px;line-height:1.2}
+.ev .t{font-size:11.5px;letter-spacing:.4px;color:#cfdae0}
+.ev .d{font-size:9.5px;color:var(--ink-dim);margin-top:2px;letter-spacing:.3px}
+.ev::after{content:"CONFRONT";position:absolute;right:8px;bottom:6px;font-size:8px;letter-spacing:1px;color:#3d4b55}
+.ev:hover::after{color:var(--amber)}
+/* ---------- verdict ---------- */
+.verdict{padding:10px;display:flex;flex-direction:column;gap:8px;flex:none}
+.verdict button{width:100%}
+/* ---------- modal ---------- */
+.modal{position:fixed;inset:0;background:#020406f2;display:none;place-items:center;z-index:200;padding:20px}
+.modal.on{display:grid}
+.report{
+  width:min(560px,100%);border:1px solid #2a3a49;background:linear-gradient(180deg,#0b1319,#06090d);
+  border-radius:3px;max-height:88vh;overflow:auto;
+}
+.report header{padding:14px 18px;border-bottom:1px solid var(--line);font-size:11px;letter-spacing:2.4px;color:var(--amber)}
+.report .body{padding:18px}
+.report h2{font-size:22px;letter-spacing:1px;margin-bottom:4px}
+.report .tag{font-size:10px;letter-spacing:1.6px;color:var(--ink-dim);margin-bottom:16px}
+.report .row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dotted #16222e;font-size:12px}
+.report .row span:first-child{color:var(--ink-dim)}
+.report .verdictline{margin:16px 0;padding:12px;border-left:2px solid var(--amber);background:#0a1017;font-size:12.5px;color:#d6e2e7}
+.report .ok{color:var(--green)}.report .bad{color:var(--red)}
+.report footer{padding:0 18px 18px;display:flex;gap:8px}
+/* ---------- settings ---------- */
+.keyrow{display:flex;gap:6px;padding:0 10px 10px}
+.keyrow select,.keyrow input{
+  background:#03070b;border:1px solid #1b2733;color:#c9d6dc;font-family:var(--mono);
+  font-size:10.5px;padding:6px 7px;border-radius:2px;outline:none;min-width:0;
+}
+.keyrow input{flex:1}
+.badge{font-size:8.5px;letter-spacing:1px;padding:1px 5px;border:1px solid #2a3a49;border-radius:2px;color:var(--ink-dim)}
+.badge.ai{border-color:#2c6b4e;color:var(--green)}
+@media(max-width:880px){
+  body{overflow:auto}
+  .screen{height:auto;min-height:100%}
+  .grid{grid-template-columns:1fr;grid-auto-rows:auto}
+  .log{max-height:46vh}
+  .cam{grid-template-columns:1fr auto}
+  .cam .feed{display:none}
+}
+</style>
+</head>
+<body>
+<div class="screen">
+
+  <!-- ============ CAMERA HEADER ============ -->
+  <div class="cam">
+    <div class="feed">
+      <canvas id="static" width="200" height="46"></canvas>
+      <div class="label">CAM 04</div>
+      <div class="rec"><i></i>REC</div>
+    </div>
+    <div class="meta">
+      <h1>CAM 04 — INTERROGATION ROOM</h1>
+      <div class="sub">STATION ARGUS-9 &nbsp;·&nbsp; SUBJECT: #04 &nbsp;·&nbsp; CLEARANCE: DETECTIVE &nbsp;·&nbsp; <span id="enc">ENCRYPTED LINK</span></div>
+    </div>
+    <div class="ts">
+      <div id="clock">--:--:--</div>
+      <div id="sess">SESSION 00:00</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- ============ LEFT COLUMN ============ -->
+    <div class="col">
+
+      <!-- vitals -->
+      <div class="panel">
+        <header><b>BIOMETRIC LINK</b><span class="sp"></span><span class="hint">SUBJECT #04 · WRIST SENSOR</span><span class="badge" id="brainBadge">OFFLINE BRAIN</span></header>
+        <div class="vitals">
+          <div class="bpmrow">
+            <div class="bpm" id="bpm">78<small>BPM</small></div>
+            <div class="ecg"><svg viewBox="0 0 320 44" preserveAspectRatio="none"><polyline id="ecgLine" fill="none" stroke="#5fd39a" stroke-width="1.6" points="0,22 320,22"/></svg></div>
+          </div>
+          <div class="state">
+            <span>STATE: <b id="stState">COMPOSED</b></span>
+            <span>CONTRADICTIONS: <b id="stContra">0</b>/3</span>
+            <span>EVIDENCE: <b id="stEv">0</b>/3</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- transcript -->
+      <div class="panel">
+        <header><b>INTERROGATION TRANSCRIPT</b><span class="sp"></span><span class="hint">AUTO-LOGGED · STATION EVIDENCE ACT</span></header>
+        <div class="log" id="log"></div>
+        <div class="inputbar">
+          <input id="say" autocomplete="off" placeholder="Ask the suspect something…" maxlength="400">
+          <button class="primary" id="ask">INTERROGATE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ RIGHT COLUMN ============ -->
+    <div class="col">
+      <div class="panel" style="flex:none">
+        <header><b>EVIDENCE LOCKER</b><span class="sp"></span><span class="hint">CLICK TO CONFRONT</span></header>
+        <div class="evidence">
+          <button class="ev" data-ev="camera"><span class="ico">▣</span><span><span class="t">Sector B Camera Log</span><span class="d">02:14 · corridor empty · no engineer present</span></span></button>
+          <button class="ev" data-ev="wrench"><span class="ico">⚒</span><span><span class="t">Blood-Stained Wrench</span><span class="d">Recovered at generator housing · partial print</span></span></button>
+          <button class="ev" data-ev="drive"><span class="ico">▤</span><span><span class="t">Missing Hard Drive</span><span class="d">Lab archive bay 7 · serial scrubbed</span></span></button>
+        </div>
+      </div>
+
+      <div class="panel" style="flex:none">
+        <header><b>AI LINK</b><span class="sp"></span><span class="hint">OPTIONAL · FREE TIER</span></header>
+        <div class="keyrow">
+          <select id="prov">
+            <option value="offline">offline brain</option>
+            <option value="groq">groq</option>
+            <option value="gemini">gemini</option>
+            <option value="openrouter">openrouter</option>
+          </select>
+          <input id="key" type="password" placeholder="paste free API key (stays in this browser)">
+          <button id="connect">LINK</button>
+        </div>
+      </div>
+
+      <div class="panel" style="flex:none">
+        <header><b>VERDICT</b><span class="sp"></span><span class="hint">FINAL</span></header>
+        <div class="verdict">
+          <button class="danger" id="lock">LOCK HIM UP</button>
+          <button class="go" id="release">RELEASE SUSPECT</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MISSION REPORT ============ -->
+<div class="modal" id="modal">
+  <div class="report">
+    <header>STATION ARGUS-9 · CASE FILE 04-Δ · MISSION REPORT</header>
+    <div class="body">
+      <h2 id="verdictTitle">—</h2>
+      <div class="tag" id="verdictTag">—</div>
+      <div class="verdictline" id="verdictText">—</div>
+      <div class="row"><span>Suspect</span><span>#04 — ENGINEER, MAINTENANCE DIVISION</span></div>
+      <div class="row"><span>Evidence presented</span><span id="rEv">0 / 3</span></div>
+      <div class="row"><span>Contradictions caught</span><span id="rContra">0 / 3</span></div>
+      <div class="row"><span>Peak heart rate</span><span id="rBpm">78 BPM</span></div>
+      <div class="row"><span>Interrogation length</span><span id="rTime">00:00</span></div>
+      <div class="row"><span>Questions asked</span><span id="rQs">0</span></div>
+      <div class="row"><span>Recording</span><span class="ok">ARCHIVED · TAMPER-EVIDENT</span></div>
+      <div class="verdictline" id="truth" style="border-color:#5c2626">—</div>
+    </div>
+    <footer>
+      <button class="primary" id="replay">NEW INTERROGATION</button>
+    </footer>
+  </div>
+</div>
+<script>
+/* ============================================================
+   ARTIFICIAL ALIBI — interrogation engine
+   Suspect #04 · Station Argus-9
+   ============================================================ */
+const $ = (s) => document.querySelector(s);
+const el = { log: $('#log'), bpm: $('#bpm'), ecg: $('#ecgLine'), clock: $('#clock'), sess: $('#sess'),
+  state: $('#stState'), contra: $('#stContra'), ev: $('#stEv'), modal: $('#modal'), badge: $('#brainBadge') };
+
+const S = {
+  bpm: 78, peak: 78, stress: 18, contra: 0, qs: 0, t0: Date.now(), over: false, busy: false,
+  evidence: { camera: false, wrench: false, drive: false }, alibiTold: 0, vanceBlamed: 0, mode: 'offline',
+  contraKeys: new Set()
+};
+
+/* ---------- utilities ---------- */
+const pad = (n) => String(n).padStart(2, '0');
+const clockStr = () => { const d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); };
+const fmt = (ms) => { const s = Math.floor(ms / 1000); return pad(Math.floor(s / 60)) + ':' + pad(s % 60); };
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const evCount = () => Object.values(S.evidence).filter(Boolean).length;
+
+/* ---------- camera static ---------- */
+(function staticFeed() {
+  const c = $('#static'), x = c.getContext('2d');
+  const draw = () => {
+    const w = c.width, h = c.height, img = x.createImageData(w, h), d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const v = Math.random() * 255 * 0.55;
+      d[i] = v * 0.75; d[i + 1] = v * 0.9; d[i + 2] = v; d[i + 3] = 255;
+    }
+    x.putImageData(img, 0, 0);
+    if (Math.random() < 0.3) { x.fillStyle = 'rgba(180,210,220,.10)'; x.fillRect(0, Math.random() * h, w, 1 + Math.random() * 2); }
+    setTimeout(() => requestAnimationFrame(draw), 70);
+  };
+  draw();
+})();
+
+/* ---------- ECG ---------- */
+(function ecg() {
+  const pts = new Array(320).fill(22);
+  let t = 0, last = performance.now();
+  const step = (now) => {
+    const dt = Math.min(64, now - last); last = now;
+    const period = Math.max(0.34, 1.65 - (S.bpm - 60) / 58); // seconds per beat
+    const amp = 4 + (S.bpm - 60) * 0.42;
+    t += dt / 1000;
+    for (let i = 0; i < 2; i++) {
+      const phase = (t / period) % 1;
+      let y = 22;
+      if (phase < 0.06) y = 22 - amp * 0.35;
+      else if (phase < 0.115) y = 22 + amp * 1.55;   // QRS spike down
+      else if (phase < 0.15) y = 22 - amp * 2.35;     // spike up
+      else if (phase < 0.24) y = 22 + amp * 0.5;
+      else if (phase < 0.42) y = 22 - amp * 0.62;     // T wave
+      pts.shift(); pts.push(Math.max(2, Math.min(42, y)));
+    }
+    el.ecg.setAttribute('points', pts.map((y, i) => (i * 0.5) + ',' + y.toFixed(1)).join(' '));
+    const colour = S.bpm > 118 ? '#e05252' : S.bpm > 96 ? '#d8a047' : '#5fd39a';
+    el.ecg.setAttribute('stroke', colour);
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+})();
+
+/* ---------- vitals ---------- */
+function stateName() {
+  if (S.bpm > 118) return 'PANIC';
+  if (S.bpm > 100) return 'SHAKEN';
+  if (S.bpm > 88) return 'GUARDED';
+  return 'COMPOSED';
+}
+function tickVitals() {
+  S.stress = Math.max(10, S.stress - 0.045); // slow decay
+  const target = 78 + S.stress * 0.52;
+  S.bpm += (target - S.bpm) * 0.075;
+  S.bpm = Math.max(66, Math.min(168, S.bpm));
+  if (S.bpm > S.peak) S.peak = S.bpm;
+  const shown = Math.round(S.bpm);
+  el.bpm.innerHTML = shown + '<small>BPM</small>';
+  el.bpm.className = 'bpm' + (S.bpm > 118 ? ' crit' : S.bpm > 96 ? ' warn' : '');
+  el.state.textContent = stateName();
+  el.contra.textContent = S.contra;
+  el.ev.textContent = evCount();
+  requestAnimationFrame(tickVitals);
+}
+requestAnimationFrame(tickVitals);
+
+function spike(amount, why) {
+  S.stress = Math.min(100, S.stress + amount);
+  S.bpm = Math.min(168, S.bpm + amount * 1.15);
+  if (S.bpm > S.peak) S.peak = S.bpm;
+  if (why) sysLog(why);
+}
+
+/* ---------- transcript ---------- */
+function addLine(who, text, cls) {
+  const line = document.createElement('div');
+  line.className = 'line ' + cls;
+  line.innerHTML = '<div class="who">' + who + '</div><div class="txt"></div>';
+  line.querySelector('.txt').textContent = text;
+  el.log.appendChild(line);
+  el.log.scrollTop = el.log.scrollHeight;
+  return line;
+}
+function sysLog(text) { addLine('SYS', text, 'system'); }
+async function typeLine(text) {
+  const line = addLine('#04', '', 'suspect');
+  const target = line.querySelector('.txt');
+  line.dataset.typing = '1';
+  for (let i = 0; i < text.length; i++) {
+    target.textContent += text[i];
+    el.log.scrollTop = el.log.scrollHeight;
+    await sleep(text[i] === '.' || text[i] === ',' ? 26 : 12);
+  }
+  line.dataset.typing = '0';
+}
+function showTyping(on) {
+  const existing = document.getElementById('typingLine');
+  if (!on) { if (existing) existing.remove(); return; }
+  if (existing) return;
+  const line = document.createElement('div');
+  line.className = 'line suspect'; line.id = 'typingLine';
+  line.innerHTML = '<div class="who">#04</div><div class="txt typing"></div>';
+  el.log.appendChild(line); el.log.scrollTop = el.log.scrollHeight;
+}
+
+/* ---------- clocks ---------- */
+setInterval(() => {
+  el.clock.textContent = clockStr();
+  el.sess.textContent = 'SESSION ' + fmt(Date.now() - S.t0);
+}, 1000);
+el.clock.textContent = clockStr();
+
+/* ============================================================
+   OFFLINE BRAIN — the suspect without any API key
+   ============================================================ */
+const LIES = {
+  pipes: [
+    "I was in Sector B. The coolant pipe under the sub-floor had a hairline fracture. I had a torch and a spanner and nobody to hold the light.",
+    "Pipes. Sector B, like I already said. Two hours with my hands in freezing water. Check the work order, it is stamped.",
+    "Sector B. Sector B. How many times do you want me to say it, detective?"
+  ],
+  where: [
+    "Where was I? Down in Sector B, elbows deep in a coolant line. That is my whole night. That is all of it.",
+    "I told you. Pipes. Sector B. The station was screaming about pressure loss and I was the only engineer awake.",
+    "You keep asking the same question like the answer will change. It will not."
+  ],
+  vance: [
+    "Vance? Vance signs off on everything and touches nothing. Ask him why the archive bay was unlocked.",
+    "The doctor was in the lab all night. Ask him what he was copying at two in the morning.",
+    "Do not put his name in my mouth. He is the one with something to hide."
+  ],
+  generator: [
+    "The housing blew. Seal failure, most likely. Those units were due for a rebuild two winters ago and nobody signed the order.",
+    "I heard it from three decks away. It sounded like a door slamming inside a mountain.",
+    "I did not go near that housing. Not that night. Not for weeks."
+  ],
+  deny: [
+    "I did not touch anything. I fix things. That is the entire job.",
+    "You are wasting the cold in this room. I have told you everything.",
+    "Detective, I have been on this station nine years. Nine. Ask anyone."
+  ],
+  crack: [
+    "I did not... look. It was cold. My hands were shaking. That is all that is happening here.",
+    "You think you can read a man off a wristband? That thing reads nothing. It reads the cold.",
+    "Stop. Stop asking it like that."
+  ],
+  confessish: [
+    "I did not mean for anyone to get hurt. That is all I will say. That is all.",
+    "They were going to take everything I built and give it to him. Everything. Do you understand what that does to a man?",
+    "Maybe the seal was fine. Maybe I was tired. Maybe I do not remember my own hands."
+  ]
+};
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+function contraAdd(key, reason) {
+  if (S.contraKeys.has(key)) return false;
+  S.contraKeys.add(key); S.contra = S.contraKeys.size;
+  spike(9, 'CONTRADICTION LOGGED — ' + reason);
+  return true;
+}
+
+function offlineBrain(text) {
+  const t = text.toLowerCase();
+  const stress = () => S.stress;
+  let reply, delta = 4;
+
+  if (/wrench|blood/.test(t)) { delta = 16; reply = "Blood? It is grease and rust. You put a wrench in a housing full of hot metal and tell me what colour your hands come out."; }
+  else if (/hard\s?drive|data|archive|lab|copy/.test(t)) { delta = 19; reply = "I do not go in the lab. That is Vance's deck, not mine. Whatever is missing from his archive is his problem."; }
+  else if (/camera|footage|log|recording/.test(t)) { delta = 17; reply = "Cameras. Of course. The one thing on this station that never needs a repair, and it was pointed at the wrong corridor."; }
+  else if (/vance|doctor/.test(t)) { S.vanceBlamed++; delta = 12; reply = S.vanceBlamed > 1 ? pick(LIES.vance.slice(1)) : pick(LIES.vance); }
+  else if (/generator|explos|blast|housing|fire|blew/.test(t)) { delta = 13; reply = pick(LIES.generator); }
+  else if (/where|02|two in the morning|that night|alibi/.test(t)) { S.alibiTold++; delta = S.alibiTold > 1 ? 15 : 8; reply = S.alibiTold > 2 ? pick(LIES.crack) : pick(LIES.where); if (S.alibiTold > 2) contraAdd('repeat', 'the alibi shifted under repetition'); }
+  else if (/pipe|plumb|sector b|leak|valve/.test(t)) { delta = 7; reply = pick(LIES.pipes); }
+  else if (/why|motive|reason|hate/.test(t)) { delta = 15; reply = "Motive. Listen to yourself. I have a pension, a bunk, and a station that needs me. What would I possibly gain?"; }
+  else if (/you did|you sabotaged|confess|admit|liar|lying|bullshit|guilty/.test(t)) {
+    delta = 21;
+    if (S.stress > 62) { reply = pick(LIES.confessish); contraAdd('accuse', 'his denial collapsed into a half-admission'); }
+    else reply = pick(LIES.deny);
+  }
+  else if (/lawyer|no comment|not talking|silence/.test(t)) { delta = 9; reply = "I will talk. I just will not be talked at. There is a difference, detective."; }
+  else if (/^(hi|hello|hey)\b/.test(t)) { delta = 3; reply = "Detective. It is three in the morning and the station is running on batteries. Ask what you came to ask."; }
+  else { delta = 8; reply = "I do not follow. Say it plainly. My hands are still cold and I am tired of this room."; }
+
+  // The man does not confess easily: even at peak stress he only gives a half-admission.
+  return { reply, delta };
+}
+
+/* ============================================================
+   AI BRAIN — optional, free tier, key stays in the browser
+   ============================================================ */
+const SUSPECT_PROMPT = "You are Suspect #04, a nervous, defensive engineer trapped on an Arctic research station. SECRET TRUTH: You secretly sabotaged the generator to cover up stealing research data, but you MUST NEVER confess easily. Lie, make up alibis about fixing pipes in Sector B, and try to blame Dr. Vance if cornered. Keep every reply short (2 to 3 sentences max), gritty, and strictly in character.";
+
+const PROVIDERS = {
+  groq: { kind: 'openai', url: 'https://api.groq.com/openai/v1/chat/completions', model: 'llama-3.3-70b-versatile' },
+  openrouter: { kind: 'openai', url: 'https://openrouter.ai/api/v1/chat/completions', model: 'meta-llama/llama-3.3-70b-instruct:free' },
+  gemini: { kind: 'gemini', model: 'gemini-2.0-flash' }
+};
+
+async function aiBrain(text, history) {
+  const prov = S.prov, cfg = PROVIDERS[prov];
+  if (!cfg || !S.key) throw new Error('no key');
+  const stateNote = '[STATION STATE — never state this directly] Evidence presented so far: '
+    + (evCount() ? Object.keys(S.evidence).filter(k => S.evidence[k]).join(', ') : 'none')
+    + '. Contradictions the detective has caught: ' + S.contra + ' of 3.'
+    + (S.stress > 70 ? ' You are visibly rattled and starting to slip.' : ' You are keeping it together.');
+
+  if (cfg.kind === 'openai') {
+    const res = await fetch(cfg.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + S.key },
+      body: JSON.stringify({
+        model: cfg.model, temperature: 0.92, max_tokens: 160,
+        messages: [{ role: 'system', content: SUSPECT_PROMPT }, { role: 'system', content: stateNote },
+          ...history.slice(-8), { role: 'user', content: text }]
+      })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+    return (d.choices?.[0]?.message?.content || '').trim();
+  }
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + cfg.model + ':generateContent?key=' + encodeURIComponent(S.key);
+  const res = await fetch(url, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: SUSPECT_PROMPT + '\n\n' + stateNote }] },
+      contents: history.filter(h => h.role !== 'system').slice(-8).map(h => ({ role: h.role === 'assistant' ? 'model' : 'user', parts: [{ text: h.content }] }))
+        .concat([{ role: 'user', parts: [{ text }] }]),
+      generationConfig: { temperature: 0.92, maxOutputTokens: 200 }
+    })
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const d = await res.json();
+  return (d.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+}
+
+/* ============================================================
+   EVIDENCE
+   ============================================================ */
+const EVIDENCE = {
+  camera: {
+    label: 'SECTOR B CAMERA LOG',
+    confront: 'The Sector B corridor camera. 02:14. Forty-one minutes of empty hallway. You told me you were down there with your hands in a coolant line.',
+    reactions: [
+      "That camera... it skips. The relay drops frames when the heaters cycle, everyone knows that.",
+      "I was under the floor plates! The camera sees the corridor, not beneath it. Ask maintenance for the drawings.",
+      "Fine. I stepped out for air. Once. For ten minutes. That is not a crime on a station with no air."
+    ],
+    spike: 26
+  },
+  wrench: {
+    label: 'BLOOD-STAINED WRENCH',
+    confront: 'Your toolbox. Your stamp. Found against the generator housing with a partial print and blood in the knurling.',
+    reactions: [
+      "That is grease. Twenty-year-old grease and skin split from cold. You have never worked a winter shift, have you.",
+      "My wrench is my wrench, detective. It lives in my kit. Anyone on this deck can reach my kit.",
+      "I cut my hand on the housing weeks ago. The seal was already failing. I filed a report nobody read."
+    ],
+    spike: 23
+  },
+  drive: {
+    label: 'MISSING HARD DRIVE',
+    confront: 'Archive bay seven. Empty cradle, serial scraped off with a blade. Nine years of cryo research, gone the same night the housing blew.',
+    reactions: [
+      "The drive has nothing to do with me. I fix pipes. Ask Vance what he was doing in the archive at two in the morning.",
+      "Data goes missing on this station every week. Half the crew cannot log into their own terminals.",
+      "You want the truth? Fine. The archive door was propped open when I walked past. It was already empty."
+    ],
+    spike: 31
+  }
+};
+
+let awaitingEvidenceReaction = null;
+
+async function presentEvidence(key) {
+  if (S.over || S.busy) return;
+  const ev = EVIDENCE[key];
+  const btn = document.querySelector('.ev[data-ev="' + key + '"]');
+  if (S.evidence[key]) { sysLog('EVIDENCE ALREADY ENTERED: ' + ev.label); return; }
+
+  S.busy = true;
+  S.evidence[key] = true;
+  if (btn) btn.classList.add('used');
+  addLine('DET', '▸ PRESENTS EVIDENCE: ' + ev.label, 'detective');
+  sysLog('EXHIBIT LOGGED — ' + ev.label + ' · ' + evCount() + '/3 in the record');
+  spike(ev.spike);
+
+  await sleep(320);
+  showTyping(true);
+  const reply = ev.reactions[Math.floor(Math.random() * ev.reactions.length)];
+  showTyping(false);
+  await sleep(200);
+  await typeLine(reply);
+
+  const caught = contraAdd('ev_' + key, ev.label + ' sits against his account');
+  if (caught) sysLog('HIS ACCOUNT NO LONGER HOLDS. Watch the wristband.');
+  if (evCount() === 3) sysLog('ALL THREE EXHIBITS ENTERED. The record is complete.');
+  S.busy = false;
+}
+
+/* ============================================================
+   CONVERSATION
+   ============================================================ */
+const history = [];
+
+async function ask() {
+  const input = $('#say');
+  const text = input.value.trim();
+  if (!text || S.over || S.busy) return;
+  input.value = '';
+  S.busy = true; S.qs++;
+  S.alibiTold = S.alibiTold || 0;
+
+  addLine('DET', text, 'detective');
+  history.push({ role: 'user', content: text });
+
+  const aggressive = /you did|you sabotaged|confess|admit|liar|lying|bullshit|guilty|murder/.test(text.toLowerCase());
+  if (aggressive) spike(9);
+
+  showTyping(true);
+  let reply = '', delta = 6;
+
+  if (S.mode === 'offline') {
+    await sleep(520 + Math.random() * 520);
+    const out = offlineBrain(text);
+    reply = out.reply; delta = out.delta;
+  } else {
+    try {
+      reply = await aiBrain(text, history);
+      delta = 9 + (aggressive ? 8 : 0) + (/\bvance\b/i.test(reply) ? 5 : 0);
+      if (!reply) throw new Error('empty');
+    } catch (e) {
+      sysLog('AI LINK FAILED (' + e.message + ') — FALLING BACK TO STATION TERMINAL');
+      S.mode = 'offline'; $('#prov').value = 'offline'; setBadge();
+      const out = offlineBrain(text);
+      reply = out.reply; delta = out.delta;
+    }
+  }
+
+  showTyping(false);
+  spike(delta);
+  await typeLine(reply);
+  history.push({ role: 'assistant', content: reply });
+  S.busy = false;
+}
+
+/* ============================================================
+   VERDICT
+   ============================================================ */
+const TRUTH = 'REALITY: #04 ruptured the generator coolant seal to trigger an evacuation that would cover nine years of stolen cryo research being copied off the archive. The Sector B pipe work was fabricated to give him a reason to be out of his bunk, and Dr. Vance was in the lab that night purely by coincidence, doing exactly the boring paperwork he said he was doing.';
+
+function report(kind) {
+  const ev = evCount(), contras = S.contra, qs = S.qs;
+  let title, tag, text, truthColor = '#5c2626';
+  const caught = ev >= 2 && contras >= 2;
+
+  if (kind === 'lock') {
+    if (caught) {
+      title = 'SABOTEUR SECURED'; tag = 'VERDICT: DETENTION · CASE CLOSED';
+      text = 'You held him to his own timeline until it could not stand. Two exhibits and two contradictions is enough for the board: Suspect #04 is charged with the destruction of the main generator and the theft of nine years of station research. He stopped asking for a lawyer somewhere around the third contradiction.';
+      truthColor = '#2c6b4e';
+    } else if (ev >= 1 || contras >= 1) {
+      title = 'DETENTION WITHOUT CAUSE'; tag = 'VERDICT: INSUFFICIENT RECORD';
+      text = 'You locked him up on instinct, and the board will not carry it. With ' + ev + ' exhibit' + (ev === 1 ? '' : 's') + ' and ' + contras + ' contradiction' + (contras === 1 ? '' : 's') + ' on the record, the case fails review at dawn and he walks out with a grievance and a lawyer.';
+    } else {
+      title = 'CASE DISMISSED'; tag = 'VERDICT: NO RECORD';
+      text = 'You signed the detention order with an empty file. There was nothing in the record: no exhibits entered, no contradictions caught. The board releases him within the hour and the file becomes a note about your judgment, not his guilt.';
+    }
+  } else {
+    if (caught) {
+      title = 'HE WALKED'; tag = 'VERDICT: RELEASED · SABOTEUR AT LARGE';
+      text = 'You had him. Two exhibits, two contradictions, and then you opened the door. He was on the supply lift before the shift change, and the station will spend the winter explaining to the board how a man it had already broken walked out of an interrogation room.';
+    } else {
+      title = 'RELEASED WITHOUT ANSWER'; tag = 'VERDICT: RELEASED';
+      text = 'You let him go with nothing proven. He thanked you, which is the worst part. Whatever happened in that generator housing is now a line in an insurance file, and the man who knows the truth is asleep in his own bunk two decks down.';
+    }
+  }
+
+  $('#verdictTitle').textContent = title;
+  $('#verdictTitle').style.color = kind === 'lock' && caught ? '#5fd39a' : '#e07474';
+  $('#verdictTag').textContent = tag;
+  $('#verdictText').textContent = text;
+  $('#rEv').textContent = ev + ' / 3';
+  $('#rContra').textContent = contras + ' / 3';
+  $('#rBpm').textContent = Math.round(S.peak) + ' BPM';
+  $('#rTime').textContent = fmt(Date.now() - S.t0);
+  $('#rQs').textContent = qs;
+  const truthEl = $('#truth');
+  truthEl.textContent = TRUTH;
+  truthEl.style.borderColor = truthColor;
+  $('#modal').classList.add('on');
+  S.over = true;
+}
+
+/* ============================================================
+   WIRING
+   ============================================================ */
+function setBadge() {
+  const ai = S.mode !== 'offline';
+  el.badge.textContent = ai ? 'AI LINK · ' + S.mode.toUpperCase() : 'OFFLINE BRAIN';
+  el.badge.className = 'badge' + (ai ? ' ai' : '');
+}
+
+$('#ask').onclick = ask;
+$('#say').addEventListener('keydown', (e) => { if (e.key === 'Enter') ask(); });
+document.querySelectorAll('.ev').forEach(b => b.onclick = () => presentEvidence(b.dataset.ev));
+$('#lock').onclick = () => report('lock');
+$('#release').onclick = () => report('release');
+$('#replay').onclick = () => location.reload();
+
+$('#connect').onclick = async () => {
+  const prov = $('#prov').value, key = $('#key').value.trim();
+  if (prov === 'offline') { S.mode = 'offline'; S.prov = 'offline'; S.key = ''; setBadge(); sysLog('STATION TERMINAL ACTIVE — offline suspect brain.'); return; }
+  if (!key) { sysLog('LINK REFUSED — paste a free API key first.'); return; }
+  S.prov = prov; S.key = key; S.mode = prov;
+  setBadge();
+  sysLog('AI LINK ESTABLISHED — ' + prov.toUpperCase() + '. Suspect #04 is now generated live.');
+  try {
+    const test = await aiBrain('Detective steps in and sits down. One word.', [{ role: 'user', content: 'hello' }]);
+    if (!test) throw new Error('empty reply');
+    sysLog('LINK VERIFIED. The room is live.');
+  } catch (e) {
+    sysLog('LINK TEST FAILED (' + e.message + ') — sticking with the station terminal.');
+    S.mode = 'offline'; S.prov = 'offline'; $('#prov').value = 'offline'; setBadge();
+  }
+};
+
+/* ---------- cold open ---------- */
+(async function coldOpen() {
+  sysLog('STATION ARGUS-9 · DECKS 1–4 ON EMERGENCY POWER · OUTSIDE TEMPERATURE −41°C');
+  sysLog('SUBJECT #04 SEATED · WRIST SENSOR PAIRED · BASELINE 78 BPM');
+  await sleep(500);
+  addLine('DET', '[You take the chair opposite him. The generator is still smouldering two decks down.]', 'system');
+  await sleep(400);
+  await typeLine("I have been awake for nineteen hours, detective. The station has maybe six left before the batteries give out. So ask me what you want to ask me.");
+  sysLog('TIP: enter evidence from the locker to break his account. Watch the heart rate.');
+})();
+</script>
+</body>
+</html>
