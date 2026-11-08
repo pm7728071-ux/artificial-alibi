@@ -75,3 +75,16 @@ overhead lamp, breathing is animated per portrait, and hovering a subject punche
 surveillance interference into their frame. Clicking a subject opens their case. Portraits
 also appear as dossier thumbnails and as the biometric ID badge, which swaps per case.
 Deep link: `#room`.
+
+## 3.0 — Launch build
+
+- **Main menu**: Continue, Start Investigation, Enter the Room, Case Files, Settings,
+  Credits, How to Play
+- **Settings**: voice on/off, volume, text speed, voice cast override, reduce motion,
+  reset progress. Persisted in localStorage.
+- **Save & continue**: last case remembered, verdicts recorded, Continue resumes it
+- **Pause menu**: ESC for resume / settings / quit to menu
+- **Voice engine v2**: replies split into sentences and performed with per-sentence
+  prosody, a scored voice cast (prefers Google/Neural/Natural voices), tension-driven
+  pitch and pace, punctuation pauses and slight per-line variation. No more flat reading.
+- Launch kit, store copy, trailer beats and screenshot list: `docs/LAUNCH.md`

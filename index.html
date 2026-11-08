@@ -245,6 +245,15 @@ button.go{border-color:#2c6b4e;color:var(--green)}
 .badge-photo{width:46px;height:46px;object-fit:cover;border:1px solid #1d2b36;filter:saturate(.75) brightness(.95);animation:breathe 5.6s ease-in-out infinite}
 .thumb{display:block;width:100%;height:104px;object-fit:cover;object-position:center 22%;margin:-16px -16px 12px;width:calc(100% + 32px);filter:saturate(.7) contrast(1.05) brightness(.85)}
 .case:hover .thumb{filter:saturate(.95) contrast(1.1) brightness(1)}
+/* ================= SETTINGS / PAUSE / CREDITS ================= */
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid rgba(90,120,135,.14);font-size:10.5px;letter-spacing:1.6px;color:#a8b3b8}
+.setrow:last-child{border-bottom:none}
+.setrow input[type=range]{width:180px;accent-color:#e0a847;background:transparent}
+.setrow input[type=checkbox]{width:16px;height:16px;accent-color:#e0a847}
+.setrow select{background:#0b1114;border:1px solid var(--line);color:var(--ink);font:inherit;font-size:10px;padding:6px;max-width:240px}
+.setrow .val{color:var(--gold);min-width:38px;text-align:right}
+.cr{font-size:10.5px;line-height:1.9;color:#a8b3b8;letter-spacing:1px}
+.cr b{color:var(--gold);font-weight:400;letter-spacing:2px}
 </style>
 </head>
 <body>
@@ -260,6 +269,9 @@ button.go{border-color:#2c6b4e;color:var(--green)}
       <button id="btnBegin">START INVESTIGATION<small>CASE FILES &middot; THREE SUSPECTS &middot; ONE LIAR</small></button>
       <button id="btnRoom">ENTER THE ROOM<small>ALL THREE SUBJECTS &middot; LIVE SURVEILLANCE</small></button>
       <button id="btnCases">SELECT CASE FILE<small>THREE SUSPECTS &middot; THREE CHARGES</small></button>
+      <button id="btnCont">CONTINUE<small>RESUME LAST INTERROGATION</small></button>
+      <button id="btnSettings">SETTINGS<small>VOICE &middot; VOLUME &middot; TEXT SPEED</small></button>
+      <button id="btnCredits">CREDITS<small>WHO BUILT THIS</small></button>
       <button id="btnHow">HOW TO PLAY / BRIEFING<small>PROTOCOL &middot; EVIDENCE &middot; VERDICT</small></button>
     </div>
     <div class="title-line"></div>
@@ -289,6 +301,59 @@ button.go{border-color:#2c6b4e;color:var(--green)}
     <div class="dossier" id="dossierGrid"></div>
     <div class="title-line"></div>
     <button class="navbtn" id="dossBack">&#8592; BACK TO TERMINAL</button>
+  </div>
+</div>
+
+
+<!-- ============ SETTINGS ============ -->
+<div class="modal" id="settings">
+  <div class="report" style="max-width:560px">
+    <header>SETTINGS &middot; TERMINAL CONFIG</header>
+    <div class="body">
+      <div class="setrow"><span>Voice acting</span><input type="checkbox" id="setVoice"></div>
+      <div class="setrow"><span>Volume</span><span><input type="range" id="setVol" min="0" max="100" step="5"><span class="val" id="setVolVal">85</span></span></div>
+      <div class="setrow"><span>Text speed</span><span><input type="range" id="setSpeed" min="50" max="220" step="10"><span class="val" id="setSpeedVal">1.0x</span></span></div>
+      <div class="setrow"><span>Voice cast</span><select id="setVoiceName"></select></div>
+      <div class="setrow"><span>Reduce motion</span><input type="checkbox" id="setMotion"></div>
+      <div class="setrow"><span>Test voice</span><button class="navbtn" id="setTest">SPEAK SAMPLE</button></div>
+    </div>
+    <footer>
+      <button class="navbtn" id="setReset">RESET PROGRESS</button>
+      <button class="primary" id="setClose">DONE</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ============ PAUSE ============ -->
+<div class="modal" id="pause">
+  <div class="report" style="max-width:420px">
+    <header>SESSION PAUSED</header>
+    <div class="body">
+      <div class="menu" style="max-width:none">
+        <button id="pResume">RESUME<small>BACK TO THE TABLE</small></button>
+        <button id="pSettings">SETTINGS<small>VOICE &middot; VOLUME &middot; TEXT</small></button>
+        <button id="pQuit">QUIT TO MENU<small>CASE STAYS OPEN</small></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CREDITS ============ -->
+<div class="modal" id="credits">
+  <div class="report" style="max-width:560px">
+    <header>CREDITS</header>
+    <div class="body">
+      <div class="cr">
+        <b>ARTIFICIAL ALIBI</b><br>
+        A one-suspect-at-a-time psychological interrogation.<br><br>
+        <b>WRITTEN &amp; BUILT</b><br>Argus Internal<br><br>
+        <b>ENGINE</b><br>Hand-written HTML, CSS and JavaScript. No framework, no build step, no server.<br><br>
+        <b>ART</b><br>Portraits generated for this project; interrogation room, avatar and interference drawn on canvas.<br><br>
+        <b>VOICE</b><br>Your browser's speech synthesis, cast per suspect.<br><br>
+        <b>WITH THANKS</b><br>Everyone who sat in that chair and lied.
+      </div>
+    </div>
+    <footer><button class="primary" id="crClose">CLOSE</button></footer>
   </div>
 </div>
 
@@ -690,7 +755,7 @@ async function typeLine(text) {
   for (let i = 0; i < text.length; i++) {
     target.textContent += text[i];
     el.log.scrollTop = el.log.scrollHeight;
-    await sleep(text[i] === '.' || text[i] === ',' ? 26 : 12);
+    await sleep((text[i] === '.' || text[i] === ',' ? 26 : 12) / clamp(SET.textSpeed, 0.4, 3));
   }
   line.dataset.typing = '0';
 }
@@ -727,7 +792,7 @@ function tone(freq, dur, type, vol, slideTo) {
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = type || 'sine'; o.frequency.value = freq;
     if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, ctx.currentTime + dur);
-    g.gain.value = vol == null ? 0.05 : vol;
+    g.gain.value = (vol == null ? 0.05 : vol) * clamp(SET.volume, 0, 1);
     g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
     o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + dur);
   } catch (e) {}
@@ -738,39 +803,78 @@ const sfxBuzz  = () => { tone(148, 0.30, 'sawtooth', 0.055, 82); setTimeout(() =
 /* ============================================================
    VOICE ACTING — Web Speech synthesis, one persona per suspect
    ============================================================ */
-const VOICES = {
-  c01: { pitch: 0.45, rate: 0.88 },   // Marcus Vance — low, gravelly
-  c02: { pitch: 1.35, rate: 1.06 },   // Dr. Rostova   — cold, crisp
-  c03: { pitch: 0.72, rate: 0.78 }    // Unit K-7      — flat, robotic
-};
-const SPEECH = { supported: typeof window !== 'undefined' && 'speechSynthesis' in window, speaking: false, mouth: 0, u: null };
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+function loadJSON(k, d) { try { const r = localStorage.getItem(k); return r ? Object.assign({}, d, JSON.parse(r)) : Object.assign({}, d); } catch (e) { return Object.assign({}, d); } }
+function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
-function pickVoice() {
+/* player settings — persisted */
+const SET = loadJSON('alibi.settings', { voiceOn: true, volume: 0.85, textSpeed: 1, reduceMotion: false, voice: '' });
+const SPEECH = { supported: typeof window !== 'undefined' && 'speechSynthesis' in window, speaking: false, mouth: 0, u: null };
+let speechGen = 0;
+
+/* voice casting: prefer higher-quality English voices, matched to the character */
+const VOICES = {
+  c01: { pitch: 0.80, rate: 0.93, drift: 0.07, prefer: /(daniel|alex|david|guy|george|fred|ryan|male)/i },
+  c02: { pitch: 1.12, rate: 1.03, drift: 0.04, prefer: /(samantha|victoria|serena|karen|zira|aria|jenny|female)/i },
+  c03: { pitch: 0.98, rate: 0.97, drift: 0.02, prefer: /(google us english|aria|jenny|samantha|zira)/i }
+};
+function scoreVoice(v, cfg) {
+  if (!/^en/i.test(v.lang || '')) return -99;
+  let s = 0;
+  if (cfg.prefer.test(v.name || '')) s += 4;
+  if (/google|natural|neural|premium|enhanced|online|wavenet|multilingual/i.test(v.name || '')) s += 3;
+  if (v.localService === false) s += 1;
+  if (/^en[-_]GB/i.test(v.lang)) s += 0.5;
+  return s;
+}
+function pickVoice(caseId) {
   try {
-    const vs = window.speechSynthesis.getVoices() || [];
-    return vs.find(v => /en[-_]GB/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null;
+    const vs = (window.speechSynthesis.getVoices() || []).slice();
+    if (SET.voice) { const forced = vs.find(v => v.name === SET.voice); if (forced) return forced; }
+    const cfg = VOICES[caseId] || VOICES.c01;
+    return vs.sort((a, b) => scoreVoice(b, cfg) - scoreVoice(a, cfg))[0] || null;
   } catch (e) { return null; }
 }
-
-function speakLine(text) {
-  if (!SFX.on || !SPEECH.supported) return;
-  try {
-    window.speechSynthesis.cancel();
-    const clean = String(text).replace(/\[[^\]]*\]/g, ' ').trim();
-    if (!clean) return;
-    const u = new SpeechSynthesisUtterance(clean);
-    const v = VOICES[S.caseId] || VOICES.c01;
-    u.pitch = v.pitch; u.rate = v.rate; u.volume = 1;
-    const voice = pickVoice(); if (voice) u.voice = voice;
-    u.onstart = () => { SPEECH.speaking = true; };
-    u.onend = () => { SPEECH.speaking = false; };
-    u.onerror = () => { SPEECH.speaking = false; };
-    u.onboundary = () => { SPEECH.mouth = 1; };
-    SPEECH.u = u;
-    window.speechSynthesis.speak(u);
-  } catch (e) { SPEECH.speaking = false; }
+/* split a reply into sentence chunks so each is performed, not read flat */
+function chunkSpeech(text) {
+  return String(text).replace(/\[[^\]]*\]/g, ' ').replace(/\s+/g, ' ').trim()
+    .match(/[^.!?…]+[.!?…]*/g) || [];
 }
-
+function speakLine(text) {
+  if (!SFX.on || !SET.voiceOn || !SPEECH.supported) return;
+  const caseId = S.caseId;
+  const cfg = VOICES[caseId] || VOICES.c01;
+  const parts = chunkSpeech(text).filter(p => p.trim().length > 1);
+  if (!parts.length) return;
+  const gen = ++speechGen;
+  try { window.speechSynthesis.cancel(); } catch (e) {}
+  const voice = pickVoice(caseId);
+  const tension = clamp((S.stress || 0) / 100, 0, 1);
+  let i = 0;
+  SPEECH.speaking = true;
+  const next = () => {
+    if (gen !== speechGen) return;
+    if (i >= parts.length) { SPEECH.speaking = false; return; }
+    const raw = parts[i++].trim();
+    const loud = /\b[A-Z]{3,}\b/.test(raw);
+    const u = new SpeechSynthesisUtterance(raw);
+    if (voice) u.voice = voice;
+    u.pitch = clamp(cfg.pitch + (loud ? 0.07 : 0) + tension * cfg.drift + (Math.random() - 0.5) * 0.03, 0.2, 1.9);
+    u.rate = clamp(cfg.rate + tension * 0.10 + (loud ? -0.04 : 0) + (Math.random() - 0.5) * 0.02, 0.6, 1.5);
+    u.volume = clamp(SET.volume, 0, 1);
+    u.onstart = () => { SPEECH.speaking = true; };
+    u.onboundary = () => { SPEECH.mouth = 1; };
+    u.onerror = () => { if (gen === speechGen) SPEECH.speaking = false; };
+    u.onend = () => {
+      if (gen !== speechGen) return;
+      const pause = /[.!?…]$/.test(raw) ? 210 : 110;
+      setTimeout(next, pause);
+    };
+    SPEECH.u = u;
+    try { window.speechSynthesis.speak(u); } catch (e) { SPEECH.speaking = false; }
+  };
+  next();
+}
 /* ============================================================
    DETECTIVE MICROPHONE — Web Speech recognition
    ============================================================ */
@@ -803,11 +907,7 @@ function initMic() {
   };
 }
 
-function stopSpeech() {
-  SPEECH.speaking = false; SPEECH.mouth = 0;
-  if (!SPEECH.supported) return;
-  try { window.speechSynthesis.cancel(); } catch (e) {}
-}
+function stopSpeech() { speechGen++; SPEECH.speaking = false; try { window.speechSynthesis.cancel(); } catch (e) {} }
 
 
 /* heartbeat monitor — rate follows the suspect's BPM */
@@ -846,6 +946,7 @@ function setCase(id, opt) {
   S.guilty = (opt.guilty === undefined) ? (C.guilty !== false) : !!opt.guilty;
   S.randomized = !!opt.randomized;
   LIES = C.lies; EVIDENCE = C.evidence; ACTIVE_PROMPT = C.prompt;
+  try { SAVE.lastPlayed = id; persistSave(); } catch (e) {}
   S.bpm = 78; S.peak = 78; S.stress = 18; S.contra = 0; S.qs = 0; S.t0 = Date.now();
   S.over = false; S.busy = false; S.alibiTold = 0; S.vanceBlamed = 0; S.lastSpike = 0;
   S.contraKeys = new Set(); S.evidence = {};
@@ -1386,6 +1487,7 @@ function report(kind) {
   truthEl.textContent = 'TRUTH: ' + C.truths[S.guilty ? 'guilty' : 'innocent'];
   truthEl.style.borderColor = good ? '#2c6b4e' : '#5c2626';
   S.over = true;
+  try { SAVE.complete[S.caseId] = !!good; SAVE.lastPlayed = S.caseId; persistSave(); } catch (e) {}
   $('#modal').classList.add('on');
   if (good) sfxBeep(); else sfxBuzz();
 }
@@ -1534,6 +1636,71 @@ async function coldOpen(C) {
   await typeLine(C.intro);
   sysLog(C.tip);
 }
+
+/* ============================================================
+   SETTINGS · PAUSE · CREDITS · SAVE
+   ============================================================ */
+const SAVE = loadJSON('alibi.save', { caseId: '', complete: {}, lastPlayed: '' });
+
+function applySettingsUI() {
+  const q = (s) => $(s), on = (s, v) => { const e = q(s); if (e) e.checked = v; };
+  on('#setVoice', !!SET.voiceOn);
+  on('#setMotion', !!SET.reduceMotion);
+  const vol = q('#setVol'), sp = q('#setSpeed');
+  if (vol) { vol.value = Math.round(SET.volume * 100); q('#setVolVal').textContent = Math.round(SET.volume * 100); }
+  if (sp) { sp.value = Math.round(SET.textSpeed * 100); q('#setSpeedVal').textContent = SET.textSpeed.toFixed(1) + 'x'; }
+  const sel = q('#setVoiceName');
+  if (sel) {
+    let list = [];
+    try { list = (window.speechSynthesis.getVoices() || []).filter(v => /^en/i.test(v.lang)); } catch (e) {}
+    sel.innerHTML = '<option value="">auto cast</option>' + list.map(v => '<option value="' + v.name + '">' + v.name + '</option>').join('');
+    sel.value = SET.voice || '';
+  }
+}
+function openSettings() { applySettingsUI(); $('#settings').classList.add('on'); }
+function closeSettings() { saveJSON('alibi.settings', SET); $('#settings').classList.remove('on'); }
+function togglePause(force) {
+  const p = $('#pause'); if (!p) return;
+  const show = force != null ? force : !p.classList.contains('on');
+  if (show) { stopSpeech(); p.classList.add('on'); } else p.classList.remove('on');
+}
+function refreshContinue() {
+  const b = $('#btnCont'); if (!b) return;
+  if (SAVE.lastPlayed) { b.style.display = ''; const C = CASES[SAVE.lastPlayed]; if (C) b.querySelector('small').textContent = 'RESUME ' + C.num + ' — ' + C.name.toUpperCase(); }
+  else b.style.display = 'none';
+}
+function persistSave() { saveJSON('alibi.save', SAVE); refreshContinue(); }
+
+$('#btnSettings').onclick = () => { sfxClick(); openSettings(); };
+$('#btnCredits').onclick = () => { sfxClick(); $('#credits').classList.add('on'); };
+$('#crClose').onclick = () => { sfxClick(); $('#credits').classList.remove('on'); };
+$('#setClose').onclick = () => { sfxClick(); closeSettings(); };
+$('#setTest').onclick = () => { speakLine('I was in Sector B. The coolant line was screaming and nobody came to hold the light.'); };
+$('#setVoice').onchange = (e) => { SET.voiceOn = e.target.checked; if (!SET.voiceOn) stopSpeech(); };
+$('#setMotion').onchange = (e) => { SET.reduceMotion = e.target.checked; };
+$('#setVol').oninput = (e) => { SET.volume = (+e.target.value) / 100; $('#setVolVal').textContent = e.target.value; };
+$('#setSpeed').oninput = (e) => { SET.textSpeed = (+e.target.value) / 100; $('#setSpeedVal').textContent = SET.textSpeed.toFixed(1) + 'x'; };
+$('#setVoiceName').onchange = (e) => { SET.voice = e.target.value; };
+$('#setReset').onclick = () => {
+  try { localStorage.removeItem('alibi.save'); } catch (e) {}
+  SAVE.caseId = ''; SAVE.lastPlayed = ''; SAVE.complete = {};
+  sysLog('PROGRESS RESET — CASE ARCHIVE CLEARED');
+  refreshContinue();
+};
+$('#pResume').onclick = () => { sfxClick(); togglePause(false); };
+$('#pSettings').onclick = () => { sfxClick(); togglePause(false); openSettings(); };
+$('#pQuit').onclick = () => { sfxClick(); togglePause(false); showScreen('titleScreen'); };
+$('#btnCont').onclick = () => { sfxClick(); if (SAVE.lastPlayed) setCase(SAVE.lastPlayed); else buildDossier(), showScreen('dossier'); };
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const s = $('#settings'), c = $('#credits');
+    if (s && s.classList.contains('on')) { closeSettings(); return; }
+    if (c && c.classList.contains('on')) { c.classList.remove('on'); return; }
+    if (S.caseId && !S.over) togglePause();
+  }
+});
+try { if (window.speechSynthesis) window.speechSynthesis.onvoiceschanged = () => { applySettingsUI(); }; } catch (e) {}
+refreshContinue();
 
 /* ---------- boot: title screen first ---------- */
 S.caseId = 'c01'; S.guilty = true;
