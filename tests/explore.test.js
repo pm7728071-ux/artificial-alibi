@@ -17,7 +17,7 @@ const w=dom.window,$=s=>w.document.querySelector(s);const wait=ms=>new Promise(r
  console.log('parallax room open:', $('#theRoom').classList.contains('on'), '| subjects:', sits.length);
  w.dispatchEvent(new w.KeyboardEvent('keydown',{key:'d'}));
  await wait(400);
- const cam=w.document.getElementById('roomCam');
+ const cam=w.document.getElementById('roomScene');
  console.log('walking transform:', cam.style.transform);
  const x1=parseFloat((cam.style.transform.match(/translate3d\((-?[\d.]+)px/)||[])[1]||0);
  w.dispatchEvent(new w.KeyboardEvent('keyup',{key:'d'}));
@@ -30,7 +30,7 @@ const w=dom.window,$=s=>w.document.querySelector(s);const wait=ms=>new Promise(r
  stage.dispatchEvent(new w.PointerEvent('pointerdown',{clientX:200}));
  w.dispatchEvent(new w.PointerEvent('pointermove',{clientX:320}));
  await wait(300);
- console.log('drag turns view:', /rotateY\(-?\d/.test(cam.style.transform));
+ console.log('drag turns view:', /translate3d\(-?\d/.test(cam.style.transform) && Math.abs(parseFloat(cam.style.transform.split('(')[1])) > 0);
  w.dispatchEvent(new w.PointerEvent('pointerup',{}));
  w.__AA.exitExplore(); await wait(50);
  console.log('exit is safe when inactive:', w.__AA.EX.active === false);
