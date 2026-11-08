@@ -276,6 +276,34 @@ button.go{border-color:#2c6b4e;color:var(--green)}
 .roomscene:after{content:'';position:absolute;inset:-40% -10%;pointer-events:none;
  background:radial-gradient(ellipse at 50% 45%,transparent 30%,rgba(3,6,10,.85) 100%)}
 .walkhint{font-size:9px;letter-spacing:2px;color:#6f7d85;text-align:center;margin-top:6px}
+/* ---------- depth stage (overrides the earlier flat room) ---------- */
+.roomstage{position:relative;height:clamp(320px,54vh,600px);border:1px solid #16222e;overflow:hidden;
+ background:radial-gradient(ellipse at 50% 10%,#101a20,#04070a 74%);perspective:820px;perspective-origin:50% 46%;touch-action:none}
+.roomcam{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform}
+.rlayer{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
+.wall{background:linear-gradient(180deg,#0a1216,#0d171c 58%,#080d11);box-shadow:inset 0 0 190px rgba(0,0,0,.92)}
+.panels{display:flex;padding:0 4%}
+.panels i{flex:1;border-left:1px solid rgba(120,150,165,.10);border-right:1px solid rgba(0,0,0,.4);
+ background:linear-gradient(90deg,rgba(255,255,255,.014),transparent 60%)}
+.porthole{left:50%;top:14%;width:150px;height:150px;margin-left:-75px;border-radius:50%;border:9px solid #131c22;
+ background:radial-gradient(circle at 40% 35%,#17313d,#050b0e 72%);box-shadow:0 0 36px rgba(90,150,180,.16),inset 0 0 26px #000}
+.porthole:after{content:'';position:absolute;inset:0;border-radius:50%;opacity:.16;
+ background-image:radial-gradient(#cfe6ef 1px,transparent 1px);background-size:9px 9px}
+.floor{top:auto;bottom:0;height:44%;background:linear-gradient(#0c1418,#04070a);border-top:1px solid rgba(120,150,165,.12)}
+.table{top:auto;bottom:15%;left:50%;width:80%;height:14px;margin-left:-40%;border-radius:2px;
+ background:linear-gradient(#1c262d,#0a1014);box-shadow:0 30px 60px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.05) inset}
+.forelamp{left:50%;top:-190px;width:360px;height:360px;margin-left:-180px;border-radius:50%;
+ background:radial-gradient(circle,rgba(255,238,205,.15),transparent 68%);filter:blur(12px)}
+.forechair{top:auto;bottom:-16%;width:34%;height:76%;border-radius:16px;filter:blur(1.6px);
+ background:linear-gradient(90deg,#0a1013,#131d22)}
+.forechair.l{left:-13%}.forechair.r{right:-13%;background:linear-gradient(270deg,#0a1013,#131d22)}
+.roomscene{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);gap:2%;
+ padding:7% 9% 21%;align-items:end;transform-style:preserve-3d;pointer-events:none}
+.roomscene .sit{pointer-events:auto}
+.roomscene .table{display:none}
+.rvignette{position:absolute;inset:0;pointer-events:none;
+ background:radial-gradient(ellipse at 50% 45%,transparent 42%,rgba(0,0,0,.72) 100%),
+ repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px)}
 </style>
 </head>
 <body>
@@ -323,8 +351,21 @@ button.go{border-color:#2c6b4e;color:var(--green)}
     <div class="title-sub" style="text-align:left">OBSERVATION ROOM &middot; ALL SUBJECTS SEATED</div>
     <h1 class="title-big" style="font-size:clamp(18px,3vw,32px);text-align:left;letter-spacing:5px">THE ROOM</h1>
     <div class="title-line"></div>
-    <div class="roomscene" id="roomScene"></div>
-    <div class="roomhint">SELECT A SUBJECT TO BEGIN INTERROGATION</div>
+    <div class="roomstage" id="roomStage">
+      <div class="roomcam" id="roomCam">
+        <div class="rlayer wall" data-z="-760"></div>
+        <div class="rlayer panels" data-z="-720"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="rlayer porthole" data-z="-700"></div>
+        <div class="rlayer floor" data-z="-520"></div>
+        <div class="rlayer table" data-z="-150"></div>
+        <div class="roomscene" id="roomScene" data-z="-270"></div>
+        <div class="rlayer forechair l" data-z="260"></div>
+        <div class="rlayer forechair r" data-z="260"></div>
+        <div class="rlayer forelamp" data-z="200"></div>
+      </div>
+      <div class="rvignette"></div>
+    </div>
+    <div class="roomhint">W A S D OR DRAG &mdash; WALK THE ROOM &middot; CLICK A SUBJECT</div>
     <div class="title-line"></div>
     <button class="navbtn" id="roomBack">&#8592; BACK TO TERMINAL</button>
   </div>
@@ -1421,6 +1462,7 @@ function buildRoom() {
       '<div class="tint"></div>' +
       '<div class="plate"><b>' + C.no + ' \u00b7 ' + C.num + '</b>' +
       C.name.toUpperCase() + '<br>' + C.role + '</div>';
+    d.style.transform = 'translateZ(' + (-18 - ['c01', 'c02', 'c03'].indexOf(id) * 42) + 'px)';
     d.onclick = () => { sfxClick(); setCase(id); };
     box.appendChild(d);
   });
@@ -2051,40 +2093,57 @@ function startExplore() {
 }
 
 /* ---------- 2.5D parallax walk: drag or WASD to move through the room ---------- */
-const PX = { on: false, x: 0, target: 0, keys: {}, drag: null };
+const PX = { on: false, bound: false, x: 0, vx: 0, z: 0, vz: 0, yaw: 0, yawTarget: 0, bob: 0, last: 0, drag: null, keys: {} };
+function applyLayerDepth() {
+  const cam = document.getElementById('roomCam'); if (!cam) return;
+  cam.querySelectorAll('[data-z]').forEach(el => { el.style.transform = 'translateZ(' + el.dataset.z + 'px)'; });
+}
 function initParallaxRoom() {
-  const scene = $('#roomScene'); if (!scene) return;
-  if (!PX.on) {
-    PX.on = true;
+  const stage = document.getElementById('roomStage'), cam = document.getElementById('roomCam');
+  if (!stage || !cam) return;
+  applyLayerDepth();
+  if (!PX.bound) {
+    PX.bound = true;
+    const K = (k) => !!PX.keys[k];
+    const typing = () => { const a = document.activeElement; return a && /INPUT|TEXTAREA|SELECT/.test(a.tagName); };
     window.addEventListener('keydown', (e) => {
+      if (!PX.on || typing()) return;
       const k = e.key.toLowerCase();
-      if (!PX.on) return;
-      if (k === 'a' || k === 'arrowleft') { PX.target = clamp(PX.target - 0.22, -1, 1); e.preventDefault(); }
-      if (k === 'd' || k === 'arrowright') { PX.target = clamp(PX.target + 0.22, -1, 1); e.preventDefault(); }
+      if (['a', 'd', 'w', 's', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown'].indexOf(k) >= 0) { PX.keys[k] = true; e.preventDefault(); }
     });
-    scene.addEventListener('pointerdown', (e) => { PX.drag = { x: e.clientX, start: PX.target }; });
+    window.addEventListener('keyup', (e) => { PX.keys[e.key.toLowerCase()] = false; });
+    window.addEventListener('blur', () => { PX.keys = {}; });
+    stage.addEventListener('pointerdown', (e) => { PX.drag = { x: e.clientX }; PX.yawTarget = PX.yaw; });
     window.addEventListener('pointermove', (e) => {
       if (!PX.drag) return;
-      PX.target = clamp(PX.drag.start - (e.clientX - PX.drag.x) / 240, -1, 1);
+      PX.yawTarget = clamp((e.clientX - PX.drag.x) * 0.055, -22, 22);
     });
     window.addEventListener('pointerup', () => { PX.drag = null; });
     const loop = () => {
       requestAnimationFrame(loop);
-      if (!PX.on) return;
-      PX.x += (PX.target - PX.x) * 0.12;
-      const sits = scene.querySelectorAll('.sit');
-      sits.forEach((el, i) => {
-        const depth = 26 + i * 4;
-        el.style.transform = 'translate3d(' + (-PX.x * depth) + 'px,0,' + (PX.x > 0 ? -6 : 6) * i + 'px) rotateY(' + (-PX.x * 4) + 'deg)';
-      });
-      scene.style.backgroundPosition = (50 + PX.x * 6) + '% 50%';
+      if (!PX.on) { PX.last = performance.now(); return; }
+      const now = performance.now();
+      let dt = (now - (PX.last || now)) / 1000; PX.last = now;
+      dt = Math.min(0.05, Math.max(0, dt));
+      const ax = (K('d') || K('arrowright') ? 1 : 0) - (K('a') || K('arrowleft') ? 1 : 0);
+      const az = (K('w') || K('arrowup') ? 1 : 0) - (K('s') || K('arrowdown') ? 1 : 0);
+      PX.vx += ax * 1500 * dt; PX.vz += az * 1700 * dt;
+      const damp = Math.pow(0.0022, dt);
+      PX.vx *= damp; PX.vz *= damp;
+      PX.x = clamp(PX.x + PX.vx * dt, -190, 190);
+      PX.z = clamp(PX.z + PX.vz * dt, -150, 120);
+      const speed = Math.sqrt(PX.vx * PX.vx + PX.vz * PX.vz);
+      if (speed > 6) PX.bob += dt * (6 + speed * 0.02);
+      const bobY = Math.sin(PX.bob) * Math.min(7, speed * 0.03) + Math.sin(now / 2600) * 0.9;
+      PX.yaw += ((PX.drag ? PX.yawTarget : 0) - PX.yaw) * Math.min(1, dt * 7);
+      cam.style.transform = 'translate3d(' + (-PX.x).toFixed(2) + 'px,' + bobY.toFixed(2) + 'px,' + PX.z.toFixed(2) + 'px) rotateY(' + PX.yaw.toFixed(2) + 'deg)';
     };
     loop();
   }
   PX.on = true;
 }
 
-function openObservationRoom() { try { initParallaxRoom(); buildRoom(); showScreen('theRoom'); } catch (e) {} }
+function openObservationRoom() { try { buildRoom(); showScreen('theRoom'); initParallaxRoom(); applyLayerDepth(); } catch (e) {} }
 
 function exploreFallback(why) {
   try { sysLog('3D ROOM UNAVAILABLE (' + why + ') — SWITCHING TO OBSERVATION ROOM'); } catch (e) {}
