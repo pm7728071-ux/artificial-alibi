@@ -1378,11 +1378,11 @@ async function coldOpen(C) {
 }
 
 /* ---------- boot: title screen first ---------- */
+S.caseId = 'c01'; S.guilty = true;
+LIES = CASES.c01.lies; EVIDENCE = CASES.c01.evidence; ACTIVE_PROMPT = CASES.c01.prompt;
 buildDossier();
 heartbeat();
 renderLocker();   // preload case 01 exhibits behind the splash
-S.caseId = 'c01'; S.guilty = true;
-LIES = CASES.c01.lies; EVIDENCE = CASES.c01.evidence; ACTIVE_PROMPT = CASES.c01.prompt;
 $('#btnBegin').onclick = () => { sfxClick(); buildDossier(); showScreen('dossier'); };
 $('#btnCases').onclick = () => { sfxClick(); buildDossier(); showScreen('dossier'); };
 $('#btnHow').onclick = () => { sfxClick(); $('#briefing').classList.add('on'); };
