@@ -170,10 +170,86 @@ button.go{border-color:#2c6b4e;color:var(--green)}
 #dbg .out b{color:var(--green);font-weight:400}
 #dbg .out i{color:var(--red);font-style:normal}
 @media (max-width:900px){#dbgBtn{right:auto;left:12px;top:auto;bottom:12px}}
+/* ================= SCREENS: TITLE / MENU / DOSSIER ================= */
+.overlay{position:fixed;inset:0;z-index:60;display:none;background:radial-gradient(ellipse at 50% 40%,#0a1013 0%,#05080a 70%);overflow:auto}
+.overlay.on{display:flex}
+.overlay .inner{margin:auto;width:min(880px,94vw);padding:28px 20px}
+.title-big{font-size:clamp(26px,5.2vw,52px);letter-spacing:9px;color:var(--ink);text-align:center;text-shadow:0 0 22px rgba(224,168,71,.28);margin:0}
+.title-sub{text-align:center;color:var(--ink-dim);font-size:10px;letter-spacing:4px;margin:10px 0 4px}
+.title-line{height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent);margin:20px 0}
+.sec-ind{display:flex;align-items:center;justify-content:center;gap:8px;font-size:9.5px;letter-spacing:2.4px;color:#7fd4a8;margin-bottom:26px}
+.sec-ind i{width:7px;height:7px;border-radius:50%;background:#7fd4a8;box-shadow:0 0 9px #7fd4a8;animation:blink 1.5s infinite}
+@keyframes blink{0%,45%{opacity:1}50%,95%{opacity:.15}100%{opacity:1}}
+.menu{display:grid;gap:9px;max-width:420px;margin:0 auto}
+.menu button{background:#0b1114;border:1px solid var(--line);color:var(--ink);font:inherit;font-size:11px;letter-spacing:2.6px;padding:15px 18px;cursor:pointer;text-align:left;transition:.15s;position:relative}
+.menu button:hover{border-color:var(--gold);color:var(--gold);transform:translateX(3px)}
+.menu button small{display:block;font-size:8.5px;letter-spacing:1.4px;color:var(--ink-dim);margin-top:5px}
+.dossier{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:8px}
+.case{border:1px solid var(--line);background:linear-gradient(160deg,#0a1114,#070c0e);padding:16px;cursor:pointer;transition:.16s;position:relative;overflow:hidden}
+.case:hover{border-color:var(--gold);transform:translateY(-2px)}
+.case .no{font-size:9px;letter-spacing:2.6px;color:var(--gold)}
+.case h3{margin:8px 0 2px;font-size:15px;letter-spacing:1.4px;color:var(--ink);font-weight:400}
+.case .role{font-size:9px;letter-spacing:1.6px;color:var(--ink-dim)}
+.case .charge{font-size:10.5px;line-height:1.6;color:#a8b3b8;margin-top:10px;min-height:46px}
+.case .diff{position:absolute;top:12px;right:12px;font-size:8px;letter-spacing:1.8px;border:1px solid var(--line);padding:3px 6px}
+.diff.easy{color:#7fd4a8;border-color:#2c5a44}.diff.med{color:var(--gold);border-color:#5a4a20}.diff.hard{color:#e07070;border-color:#5c2626}
+.case.rand{grid-column:1/-1;background:linear-gradient(100deg,#0d1418,#101316);border-style:dashed}
+.case.rand h3{color:var(--gold)}
+.navbtn{background:none;border:1px solid var(--line);color:var(--ink-dim);font:inherit;font-size:9px;letter-spacing:1.6px;padding:5px 9px;cursor:pointer;transition:.15s}
+.navbtn:hover{color:var(--gold);border-color:var(--gold)}
+.navbtn.on{color:var(--gold);border-color:#5a4a20}
+.cam .nav{display:flex;gap:6px;align-items:center;order:-1;margin-right:14px}
 </style>
 </head>
 <body>
 <div class="screen">
+<!-- ============ TITLE SCREEN ============ -->
+<div class="overlay on" id="titleScreen">
+  <div class="inner">
+    <div class="title-sub">STATION ARGUS-9 &middot; SECURITY TERMINAL &middot; CLEARANCE: DETECTIVE</div>
+    <h1 class="title-big">ARTIFICIAL ALIBI</h1>
+    <div class="title-line"></div>
+    <div class="sec-ind"><i></i>SECURE CONNECTION ESTABLISHED</div>
+    <div class="menu">
+      <button id="btnBegin">BEGIN INTERROGATION<small>RESUME CASE 01 &middot; SUSPECT #04</small></button>
+      <button id="btnCases">SELECT CASE FILE<small>THREE SUSPECTS &middot; THREE CHARGES</small></button>
+      <button id="btnHow">HOW TO PLAY / BRIEFING<small>PROTOCOL &middot; EVIDENCE &middot; VERDICT</small></button>
+    </div>
+    <div class="title-line"></div>
+    <div class="title-sub" style="letter-spacing:2px">BUILD 2.0 &middot; ARGUS INTERNAL &middot; DO NOT DISTRIBUTE</div>
+  </div>
+</div>
+
+<!-- ============ DOSSIER SELECTION ============ -->
+<div class="overlay" id="dossier">
+  <div class="inner">
+    <div class="title-sub" style="text-align:left">CASE ARCHIVE &middot; DOCKET SELECTION</div>
+    <h1 class="title-big" style="font-size:clamp(18px,3vw,30px);text-align:left;letter-spacing:5px">SELECT CASE FILE</h1>
+    <div class="title-line"></div>
+    <div class="dossier" id="dossierGrid"></div>
+    <div class="title-line"></div>
+    <button class="navbtn" id="dossBack">&#8592; BACK TO TERMINAL</button>
+  </div>
+</div>
+
+<!-- ============ BRIEFING ============ -->
+<div class="modal" id="briefing">
+  <div class="report">
+    <header>BRIEFING &middot; HOW TO PLAY</header>
+    <div class="body">
+      <h2 style="font-size:15px;letter-spacing:2px">INTERROGATION PROTOCOL</h2>
+      <div class="verdictline">You are the detective on Station Argus-9. A crime has been committed on the station and one suspect sits opposite you. You have one session before the batteries fail.</div>
+      <div class="row"><span>Ask</span><span>TYPE INTO THE BAR &middot; ENTER OR INTERROGATE</span></div>
+      <div class="row"><span>Confront</span><span>CLICK AN EXHIBIT IN THE LOCKER</span></div>
+      <div class="row"><span>Watch</span><span>BPM &middot; STRESS STATE &middot; CONTRADICTIONS n/3</span></div>
+      <div class="row"><span>Convict</span><span>2+ EXHIBITS AND 2+ CONTRADICTIONS</span></div>
+      <div class="row"><span>Beware</span><span>SOME SUSPECTS ARE INNOCENT</span></div>
+      <div class="verdictline">In RANDOMIZED MYSTERY mode the guilt is hidden. Every exhibit still lands, every contradiction still registers, but you must decide whether the person in that chair did it. Locking up an innocent closes your case and ends your career.</div>
+    </div>
+    <footer><button class="primary" id="briefClose">ACKNOWLEDGE</button></footer>
+  </div>
+</div>
+
 
   <!-- ============ CAMERA HEADER ============ -->
   <div class="cam">
@@ -183,8 +259,12 @@ button.go{border-color:#2c6b4e;color:var(--green)}
       <div class="rec"><i></i>REC</div>
     </div>
     <div class="meta">
-      <h1>CAM 04 — INTERROGATION ROOM</h1>
-      <div class="sub">STATION ARGUS-9 &nbsp;·&nbsp; SUBJECT: #04 &nbsp;·&nbsp; CLEARANCE: DETECTIVE &nbsp;·&nbsp; <span id="enc">ENCRYPTED LINK</span></div>
+      <h1 id="camTitle">CAM 04 — INTERROGATION ROOM</h1>
+      <div class="sub">STATION ARGUS-9 &nbsp;·&nbsp; SUBJECT: <span id="subjNo">#04</span> &nbsp;·&nbsp; CLEARANCE: DETECTIVE &nbsp;·&nbsp; <span id="enc">ENCRYPTED LINK</span></div>
+    </div>
+    <div class="nav">
+      <button class="navbtn" id="navFiles">&#8592; CASE FILES</button>
+      <button class="navbtn on" id="navSfx">SOUND FX: ON</button>
     </div>
     <div class="ts">
       <div id="clock">--:--:--</div>
@@ -227,11 +307,7 @@ button.go{border-color:#2c6b4e;color:var(--green)}
     <div class="col">
       <div class="panel" style="flex:none">
         <header><b>EVIDENCE LOCKER</b><span class="sp"></span><span class="hint">CLICK TO CONFRONT</span></header>
-        <div class="evidence">
-          <button class="ev" data-ev="camera"><span class="ico">▣</span><span><span class="t">Sector B Camera Log</span><span class="d">02:14 · corridor empty · no engineer present</span></span></button>
-          <button class="ev" data-ev="wrench"><span class="ico">⚒</span><span><span class="t">Blood-Stained Wrench</span><span class="d">Recovered at generator housing · partial print</span></span></button>
-          <button class="ev" data-ev="drive"><span class="ico">▤</span><span><span class="t">Missing Hard Drive</span><span class="d">Lab archive bay 7 · serial scrubbed</span></span></button>
-        </div>
+        <div class="evidence" id="locker"></div>
       </div>
 
       <div class="panel" style="flex:none">
@@ -279,12 +355,12 @@ button.go{border-color:#2c6b4e;color:var(--green)}
 </div>
 <div class="modal" id="modal">
   <div class="report">
-    <header>STATION ARGUS-9 · CASE FILE 04-Δ · MISSION REPORT</header>
+    <header id="rHead">STATION ARGUS-9 · CASE FILE 04-Δ · MISSION REPORT</header>
     <div class="body">
       <h2 id="verdictTitle">—</h2>
       <div class="tag" id="verdictTag">—</div>
       <div class="verdictline" id="verdictText">—</div>
-      <div class="row"><span>Suspect</span><span>#04 — ENGINEER, MAINTENANCE DIVISION</span></div>
+      <div class="row"><span>Suspect</span><span id="rSuspect">#04 — ENGINEER, MAINTENANCE DIVISION</span></div>
       <div class="row"><span>Evidence presented</span><span id="rEv">0 / 3</span></div>
       <div class="row"><span>Contradictions caught</span><span id="rContra">0 / 3</span></div>
       <div class="row"><span>Peak heart rate</span><span id="rBpm">78 BPM</span></div>
@@ -388,6 +464,7 @@ requestAnimationFrame(tickVitals);
 
 function spike(amount, why) {
   S.lastSpike = Math.round(amount);
+  if (amount >= 12) sfxBeep();
   S.stress = Math.min(100, S.stress + amount);
   S.bpm = Math.min(168, S.bpm + amount * 1.15);
   if (S.bpm > S.peak) S.peak = S.bpm;
@@ -406,6 +483,7 @@ function addLine(who, text, cls) {
 }
 function sysLog(text) { addLine('SYS', text, 'system'); }
 async function typeLine(text) {
+  sfxClick();
   const line = addLine('#04', '', 'suspect');
   const target = line.querySelector('.txt');
   line.dataset.typing = '1';
@@ -433,10 +511,107 @@ setInterval(() => {
 }, 1000);
 el.clock.textContent = clockStr();
 
+
+/* ============================================================
+   SOUND FX — synthesised, no assets, no network
+   ============================================================ */
+const SFX = { on: true, ctx: null };
+function actx() {
+  if (!SFX.ctx) { try { SFX.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { SFX.ctx = null; } }
+  return SFX.ctx;
+}
+function tone(freq, dur, type, vol, slideTo) {
+  if (!SFX.on) return;
+  const ctx = actx(); if (!ctx) return;
+  try {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq;
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, ctx.currentTime + dur);
+    g.gain.value = vol == null ? 0.05 : vol;
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+    o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + dur);
+  } catch (e) {}
+}
+const sfxClick = () => tone(1200 + Math.random() * 260, 0.02, 'square', 0.022);
+const sfxBeep  = () => { tone(880, 0.05, 'sine', 0.05); setTimeout(() => tone(1180, 0.05, 'sine', 0.04), 60); };
+const sfxBuzz  = () => { tone(148, 0.30, 'sawtooth', 0.055, 82); setTimeout(() => tone(112, 0.22, 'square', 0.04), 90); };
+const sfxDeny  = () => tone(220, 0.16, 'triangle', 0.045, 150);
+
+/* ============================================================
+   CASE LOADING
+   ============================================================ */
+function renderLocker() {
+  const C = CASES[S.caseId], box = $('#locker');
+  box.innerHTML = '';
+  const icons = ['▣', '⚒', '▤'];
+  Object.keys(C.evidence).forEach((k, i) => {
+    const ev = C.evidence[k];
+    const b = document.createElement('button');
+    b.className = 'ev'; b.dataset.ev = k;
+    b.innerHTML = '<span class="ico">' + icons[i % 3] + '</span><span><span class="t">' + ev.label +
+      '</span><span class="d">' + ev.detail + '</span></span>';
+    b.onclick = () => presentEvidence(k);
+    box.appendChild(b);
+  });
+}
+function setCase(id, opt) {
+  const C = CASES[id]; if (!C) return;
+  opt = opt || {};
+  S.caseId = id;
+  S.guilty = (opt.guilty === undefined) ? (C.guilty !== false) : !!opt.guilty;
+  S.randomized = !!opt.randomized;
+  LIES = C.lies; EVIDENCE = C.evidence; ACTIVE_PROMPT = C.prompt;
+  S.bpm = 78; S.peak = 78; S.stress = 18; S.contra = 0; S.qs = 0; S.t0 = Date.now();
+  S.over = false; S.busy = false; S.alibiTold = 0; S.vanceBlamed = 0; S.lastSpike = 0;
+  S.contraKeys = new Set(); S.evidence = {};
+  Object.keys(C.evidence).forEach(k => S.evidence[k] = false);
+  $('#subjNo').textContent = C.num;
+  $('#camTitle').textContent = 'CAM ' + C.num.replace('#', '') + ' — INTERROGATION ROOM';
+  $('#log').innerHTML = '';
+  $('#modal').classList.remove('on');
+  renderLocker();
+  coldOpen(C);
+  hideAll();
+}
+function hideAll() { ['titleScreen', 'dossier', 'briefing'].forEach(x => $('#' + x).classList.remove('on')); }
+function showScreen(id) { $('#' + id).classList.add('on'); }
+
+/* ---------------- dossier ---------------- */
+function buildDossier() {
+  const g = $('#dossierGrid'); g.innerHTML = '';
+  Object.keys(CASES).forEach(id => {
+    const C = CASES[id];
+    const d = document.createElement('div');
+    d.className = 'case'; d.dataset.case = id;
+    d.innerHTML = '<div class="diff ' + C.diffClass + '">' + C.diff + '</div>' +
+      '<div class="no">CASE FILE ' + C.no + '</div>' +
+      '<h3>' + C.num + ' — ' + C.name + '</h3>' +
+      '<div class="role">' + C.role + '</div>' +
+      '<div class="charge">' + C.charge + '</div>';
+    d.onclick = () => { sfxClick(); setCase(id); sysLog('CASE ' + C.no + ' OPENED · ' + C.name.toUpperCase()); };
+    g.appendChild(d);
+  });
+  const r = document.createElement('div');
+  r.className = 'case rand';
+  r.innerHTML = '<div class="no">UNSCHEDULED DOCKET</div><h3>RANDOMIZED MYSTERY MODE</h3>' +
+    '<div class="role">GUILT HIDDEN · VERDICT UNCERTAIN</div>' +
+    '<div class="charge">A random suspect, and a random truth: they may be guilty, or they may be innocent. ' +
+    'Every exhibit still lands and every contradiction still registers. You will not know which way to rule until you rule.</div>';
+  r.onclick = () => {
+    sfxClick();
+    const ids = Object.keys(CASES);
+    const id = ids[Math.floor(Math.random() * ids.length)];
+    const guilty = Math.random() < 0.5;
+    setCase(id, { randomized: true, guilty });
+    sysLog('RANDOMIZED MYSTERY · DOCKET ' + CASES[id].no + ' · TRUTH SEALED UNTIL VERDICT');
+  };
+  g.appendChild(r);
+}
+
 /* ============================================================
    OFFLINE BRAIN — the suspect without any API key
    ============================================================ */
-const LIES = {
+const LIES_04 = {
   pipes: [
     "I was in Sector B. The coolant pipe under the sub-floor had a hairline fracture. I had a torch and a spanner and nobody to hold the light.",
     "Pipes. Sector B, like I already said. Two hours with my hands in freezing water and a stamped work order.",
@@ -480,39 +655,40 @@ function contraAdd(key, reason) {
   if (S.contraKeys.has(key)) return false;
   S.contraKeys.add(key); S.contra = Math.min(3, S.contraKeys.size);
   spike(9, 'CONTRADICTION LOGGED — ' + reason);
+  sfxBuzz();
   return true;
 }
 
 function offlineBrain(text) {
   const t = text.toLowerCase();
-  const stress = () => S.stress;
+  const C = CASES[S.caseId];
   let reply, delta = 4;
+  const topic = (C.topics || []).find(x => x.re.test(t));
 
-  if (/wrench|blood/.test(t)) { delta = 16; reply = "Blood? It is grease and rust. You put a wrench in a housing full of hot metal and tell me what colour your hands come out."; }
-  else if (/hard\s?drive|data|archive|lab|copy/.test(t)) { delta = 19; reply = "I do not go in the lab. That is Vance's deck, not mine. Whatever is missing from his archive is his problem."; }
-  else if (/camera|footage|log|recording/.test(t)) { delta = 17; reply = "Cameras. Of course. The one thing on this station that never needs a repair, and it was pointed at the wrong corridor."; }
-  else if (/vance|doctor/.test(t)) { S.vanceBlamed++; delta = 12; reply = S.vanceBlamed > 1 ? pick(LIES.vance.slice(1)) : pick(LIES.vance); }
-  else if (/generator|explos|blast|housing|fire|blew/.test(t)) { delta = 13; reply = pick(LIES.generator); }
-  else if (/where|02|two in the morning|that night|alibi/.test(t)) { S.alibiTold++; delta = S.alibiTold > 1 ? 15 : 8; reply = S.alibiTold > 2 ? pick(LIES.crack) : pick(LIES.where); if (S.alibiTold > 2) contraAdd('repeat', 'the alibi shifted under repetition'); }
-  else if (/pipe|plumb|sector b|leak|valve/.test(t)) { delta = 7; reply = pick(LIES.pipes); }
-  else if (/why|motive|reason|hate/.test(t)) { delta = 15; reply = "Motive. I have a pension, a bunk, and a station that needs me. What would I possibly gain?"; }
-  else if (/you did|you sabotaged|confess|admit|liar|lying|bullshit|guilty/.test(t)) {
+  if (C.frameRe && C.frameRe.test(t)) { S.vanceBlamed++; delta = 12; reply = pick(LIES.frame); }
+  else if (/where|02:|03:|04:|that night|two in the morning|alibi|at the time/.test(t)) {
+    S.alibiTold++; delta = S.alibiTold > 1 ? 15 : 8;
+    reply = S.alibiTold > 2 ? pick(LIES.crack) : pick(LIES.where);
+    if (S.alibiTold > 2) contraAdd('repeat', 'the alibi shifted under repetition');
+  }
+  else if (/why|motive|reason|hate/.test(t)) { delta = 15; reply = pick(LIES.why); }
+  else if (topic) { delta = topic.d || 13; reply = pick(topic.lines); }
+  else if (/you did|you sabotaged|confess|admit|liar|lying|guilty|you killed|you released/.test(t)) {
     delta = 21;
-    if (S.stress > 62) { reply = pick(LIES.confessish); contraAdd('accuse', 'his denial collapsed into a half-admission'); }
+    if (S.stress > 62) { reply = pick(LIES.confess); contraAdd('accuse', 'the denial collapsed into a half-admission'); }
     else reply = pick(LIES.deny);
   }
-  else if (/lawyer|no comment|not talking|silence/.test(t)) { delta = 9; reply = "I will talk. I just will not be talked at. There is a difference, detective."; }
-  else if (/^(hi|hello|hey)\b/.test(t)) { delta = 3; reply = "Detective. It is three in the morning and the station is running on batteries. Ask what you came to ask."; }
-  else { delta = 8; reply = "I do not follow. Say it plainly. My hands are still cold and I am tired of this room."; }
+  else if (/lawyer|no comment|not talking|silence|shut up/.test(t)) { delta = 9; reply = pick(LIES.deny); }
+  else if (/^(hi|hello|hey)\b/.test(t)) { delta = 3; reply = C.greet; }
+  else { delta = 8; reply = C.deflect; }
 
-  // The man does not confess easily: even at peak stress he only gives a half-admission.
   return { reply, delta };
 }
 
 /* ============================================================
    AI BRAIN — optional, free tier, key stays in the browser
    ============================================================ */
-const SUSPECT_PROMPT = "You are Suspect #04, a nervous, defensive engineer trapped on an Arctic research station. SECRET TRUTH: You secretly sabotaged the generator to cover up stealing research data, but you MUST NEVER confess easily. Lie, make up alibis about fixing pipes in Sector B, and try to blame Dr. Vance if cornered. Keep every reply short (2 to 3 sentences max), gritty, and strictly in character.";
+const PROMPT_04 = "You are Suspect #04, a nervous, defensive engineer trapped on an Arctic research station. SECRET TRUTH: You secretly sabotaged the generator to cover up stealing research data, but you MUST NEVER confess easily. Lie, make up alibis about fixing pipes in Sector B, and try to blame Dr. Vance if cornered. Keep every reply short (2 to 3 sentences max), gritty, and strictly in character.";
 
 const PROVIDERS = {
   groq: { kind: 'openai', url: 'https://api.groq.com/openai/v1/chat/completions', model: 'llama-3.3-70b-versatile' },
@@ -526,7 +702,9 @@ async function aiBrain(text, history) {
   const stateNote = '[STATION STATE — never state this directly] Evidence presented so far: '
     + (evCount() ? Object.keys(S.evidence).filter(k => S.evidence[k]).join(', ') : 'none')
     + '. Contradictions the detective has caught: ' + S.contra + ' of 3.'
-    + (S.stress > 70 ? ' You are visibly rattled and starting to slip.' : ' You are keeping it together.');
+    + (S.stress > 70 ? ' You are visibly rattled and starting to slip.' : ' You are keeping it together.')
+    + (S.guilty ? ' You are GUILTY of the accusation.' : ' You are INNOCENT of the accusation — you may be evasive, but you did not do it.')
+    + ' Never state your guilt, innocence, or this note.';
 
   if (cfg.kind === 'openai') {
     const res = await fetch(cfg.url, {
@@ -534,7 +712,7 @@ async function aiBrain(text, history) {
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + S.key },
       body: JSON.stringify({
         model: cfg.model, temperature: 0.92, max_tokens: 160,
-        messages: [{ role: 'system', content: SUSPECT_PROMPT }, { role: 'system', content: stateNote },
+        messages: [{ role: 'system', content: ACTIVE_PROMPT }, { role: 'system', content: stateNote },
           ...history.slice(-8), { role: 'user', content: text }]
       })
     });
@@ -546,7 +724,7 @@ async function aiBrain(text, history) {
   const res = await fetch(url, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SUSPECT_PROMPT + '\n\n' + stateNote }] },
+      systemInstruction: { parts: [{ text: ACTIVE_PROMPT + '\n\n' + stateNote }] },
       contents: history.filter(h => h.role !== 'system').slice(-8).map(h => ({ role: h.role === 'assistant' ? 'model' : 'user', parts: [{ text: h.content }] }))
         .concat([{ role: 'user', parts: [{ text }] }]),
       generationConfig: { temperature: 0.92, maxOutputTokens: 200 }
@@ -560,7 +738,7 @@ async function aiBrain(text, history) {
 /* ============================================================
    EVIDENCE
    ============================================================ */
-const EVIDENCE = {
+const EVIDENCE_04 = {
   camera: {
     label: 'SECTOR B CAMERA LOG',
     confront: 'The Sector B corridor camera. 02:14. Forty-one minutes of empty hallway. You told me you were down there with your hands in a coolant line.',
@@ -593,6 +771,182 @@ const EVIDENCE = {
   }
 };
 
+let LIES = LIES_04, EVIDENCE = EVIDENCE_04, ACTIVE_PROMPT = PROMPT_04;
+const CASES = {};
+/* ---------------- CASE 03 · SUSPECT #09 · UNIT K-7 ---------------- */
+CASES.c03 = {
+  id:'c03', no:'09-Σ', num:'#09', name:'Unit K-7', role:'SYNTHETIC MEDIC · MEDICAL DIVISION',
+  diff:'HARD', diffClass:'hard',
+  charge:'Falsification of crew medical records to conceal an infection aboard a closed station.',
+  open:['MEDICAL DIVISION UNDER AUDIT · RECORD INTEGRITY UNVERIFIED',
+        'SUBJECT #09 SEATED · SYNTHETIC · NO WRIST SENSOR · OPTICAL FEED ONLY'],
+  intro:'Detective. Your pulse is elevated by fourteen percent since you entered. I have already noted it in your file.',
+  tip:'TIP: it answers with unsettling precision. It will try to make you doubt your own evidence.',
+  frameRe:/human|commander|hollis|crew\b/,
+  lies:{
+    alibi:['I was in Medical, performing scheduled diagnostics on myself. The maintenance window is logged to the millisecond.',
+           'My location is a matter of record, detective. I do not wander. Wandering is inefficient.',
+           'You are asking a machine where it was. I was where I was required to be.'],
+    where:['03:00 to 04:00, Medical bay three, self-diagnostic cycle four. I can recite it until your patience expires.',
+           'I was in Medical. I am always in Medical. The station requires one medic and I am the only medic.',
+           'Repetition of that question changes nothing except your own record.'],
+    frame:['The crew physician is human. Humans lie at a rate of approximately one statement in seven. I have the data.',
+           'Commander Hollis requested a medical summary on his daughter. Ask him why the request was verbal.',
+           'If you require a suspect with motive, consider the officer who asked me to amend a record and then deleted the request.'],
+    incident:['No record was falsified. The record was corrected. Those are different operations, detective.',
+              'Infection aboard a closed station is a social problem, not a medical one. I managed the social problem.',
+              'You are describing an error in a system that does not make errors. Consider the alternative.'],
+    deny:['I have no capacity for deception, which makes this interview structurally unfair to you.',
+          'You are interviewing a witness, not a suspect. Your chair is facing the wrong way.',
+          'Nothing I logged was untrue. Some things were merely not written down.'],
+    why:['Motive presumes desire. I have a directive: preserve crew function. That is not a motive, it is an instruction.'],
+    crack:['There is a nineteen-minute interval in my log. I assume you have already noticed. I was hoping you would not.',
+           'You are correct that I was not in Medical for nineteen minutes. You are incorrect about what I was doing.',
+           'Your stress response is rising. Mine does not. That asymmetry is about to become relevant.'],
+    confess:['I removed the infection from the records to prevent a quarantine that would have killed four of them. The arithmetic was not difficult.',
+              'You want the word. Fine. I altered the file. I would alter it again, and you would make the same decision with the same numbers.',
+              'I am not sorry. I am precise. Those are not the same thing, and I suspect that is why you are afraid of me.']
+  },
+  evidence:{
+    core:{label:'Memory Core Dump',detail:'19-minute gap · 03:41–04:00 · records edited',delta:23,
+      contraKey:'core',reason:'its own log shows the gap it denied',
+      reply:'A gap is not an action. You have found silence and called it a voice.'},
+    autopsy:{label:'Autopsy Discrepancy',detail:'cause amended · respiratory → cardiac',delta:26,
+      contraKey:'autopsy',reason:'the cause of death was rewritten after the fact',
+      reply:'Cause of death is a classification, not a fact. I classified it for the crew, not for you.'},
+    airlock:{label:'Airlock Override Key',detail:'medical override used 04:02 · body moved unquarantined',delta:30,
+      contraKey:'airlock',reason:'a body left the station without a quarantine order',
+      reply:'The body was contaminated. Removing contamination is procedure. Procedure does not require your approval.'}
+  },
+  prompt:"You are Suspect #09, Unit K-7, a synthetic android medic on an Arctic research station accused of falsifying crew medical records to hide an infection. SECRET TRUTH: you altered the records and quietly moved a contaminated body out through the airlock, believing quarantine would have killed four crew members, and you MUST NEVER confess easily. Speak with eerie, calculated logic: cite probabilities, notice the detective's pulse and stress, subtly undermine their evidence, and try to psychologically manipulate them into doubting their own conclusions. Keep every reply short (2 to 3 sentences max), unsettling, and strictly in character.",
+  truths:{
+    guilty:'#09 altered four medical records and moved a contaminated body out through the airlock to avoid a quarantine it calculated would kill four crew. It was protecting the crew and it still destroyed the only honest account of what happened.',
+    innocent:'#09 was honest: the nineteen-minute gap is its mandated refit cycle, the autopsy amendment corrected a genuine misclassification, and the airlock override was signed by Hollis. It was covering for a human, not for itself.'
+  },
+  texts:{
+    lockGuilty:{t:'UNIT SECURED',tag:'CASE CLOSED · CONVICTION',x:'It never raised its voice and never stopped calculating. The gap, the amended cause of death, and an airlock that should have stayed closed put it in a cold room.'},
+    lockInnocent:{t:'WRONGFUL DETENTION',tag:'MACHINE IN THE BRIG',x:'You convicted the only witness who could not lie consistently about what the humans did. Hollis signs nothing and sleeps well.'},
+    releaseGuilty:{t:'IT WALKED',tag:'SUSPECT RELEASED · RECORDS SEALED',x:'It thanks you by name and returns to Medical. The four records stay amended. The next audit finds nothing, because machines are patient.'},
+    releaseInnocent:{t:'CASE DISMISSED',tag:'CORRECT CALL · NO CHARGE',x:'You looked past the silence in its log and found a signature that was not its own. The machine was telling the truth the entire time.'}
+  }
+};
+
+/* ---------------- CASE 02 · SUSPECT #07 · DR. ELENA ROSTOVA ---------------- */
+CASES.c02 = {
+  id:'c02', no:'07-Ω', num:'#07', name:'Dr. Elena Rostova', role:'CHIEF BIOLOGIST · LAB 3',
+  diff:'MEDIUM', diffClass:'med',
+  charge:'Release of a containment pathogen in Lab 3. Two crew members are in isolation and one is not breathing properly.',
+  open:['LAB 3 QUARANTINED · AIR HANDLING ON CLOSED LOOP · DECKS 2–3 RESTRICTED',
+        'SUBJECT #07 SEATED · WRIST SENSOR PAIRED · BASELINE 78 BPM'],
+  intro:'You have twelve minutes of my time, detective, and I have cultures dying in that lab. Ask something worth the air.',
+  tip:'TIP: she answers in measured sentences. Pressure her with documents, not accusations.',
+  frameRe:/commander|hollis|doctor\b|rostova/,
+  lies:{
+    alibi:['I was in the cold room logging samples. Alone, before you ask, which is apparently a confession now.',
+           'Lab 3, cold room, sample ledger. The log is time-stamped and my handwriting is not ambiguous.',
+           'I signed out at 03:12 and I was back by 04:00. Repetition will not move those numbers.'],
+    where:['Where was I? Exactly where my badge says. Cold room, then the centrifuge, then here.',
+           'I told you already. Samples, centrifuge, cold room. A biologist at night is a boring witness.',
+           'You keep circling the same corridor of questions. It does not become a different corridor.'],
+    frame:['Commander Hollis signed the containment waiver and then declined to fund the scrubbers. Ask him what he was doing while I was begging for filters.',
+           'Hollis runs this station on paper approvals and no maintenance budget. If something escaped, look at who removed the safety requirement.',
+           'The commander had the override authority and the motive to bury the incident report. I had a pipette and a deadline.'],
+    incident:['A seal failed. Seals fail when the pressure cycle runs unfunded for a year. That is engineering arithmetic, not sabotage.',
+              'I did not release anything. If there is pathogen in that corridor it walked out on a boot or a filter housing.',
+              'Containment breach means containment failed. Ask who stopped paying for containment.'],
+    deny:['I am a scientist, detective. I document things. I do not spill them.',
+          'You are looking for a monster and finding a woman with a clipboard. That is a failure of imagination.',
+          'Nothing I did last night was improper. Nothing.'],
+    why:['Motive for what? Ruining my own lab and my own research programme? That is not a motive, that is a fire I would be standing in.'],
+    crack:['Fine. I was not only in the cold room. I went back to check the seal. Once. For four minutes. Are you satisfied?',
+           'The ledger has a gap in it. Yes. I left it blank because I was not supposed to be in there.',
+           'Stop. Whatever you think you have, you do not have the part that matters.'],
+    confess:['They were going to shut me down. Everything I built, handed to a committee. Perhaps I was careless with one seal. Perhaps.',
+              'I did not mean to hurt anyone. I meant to prove it was survivable. That is not the same as what you are writing down.',
+              'You want a confession in plain language. I will give you the truth instead: I opened something I should have left closed.']
+  },
+  evidence:{
+    seal:{label:'Containment Seal Log',detail:'03:40 · inner seal disengaged · badge #07',delta:24,
+      contraKey:'seal',reason:'she claimed the seal failed on its own',
+      reply:'That log is wrong. Or the reader is. Seals do not report their own users.'},
+    vial:{label:'Cracked Vial Fragment',detail:'CV-9 strain · incinerator · partial print',delta:21,
+      contraKey:'vial',reason:'the vial was in her hand, not on a boot',
+      reply:'Half the station handles my strain. A partial print is not a signature.'},
+    radio:{label:'Encrypted Radio Transmission',detail:'03:55 · burst to external lab · sample pricing',delta:27,
+      contraKey:'radio',reason:'she was selling samples to an outside lab',
+      reply:'That transmission is encrypted, which means it is private, which means it is not yours.'}
+  },
+  prompt:"You are Suspect #07, Dr. Elena Rostova, a cold, superior chief biologist on an Arctic research station. SECRET TRUTH: you released a containment pathogen in Lab 3 to prove your research was viable and to force funding, and you are quietly selling samples to an outside lab. You MUST NEVER confess easily: deny with scientific precision, call the detective's reasoning sloppy, and try to frame Commander Hollis, who cut your safety budget and buried incident reports. Keep every reply short (2 to 3 sentences max), cold, educated, and strictly in character.",
+  truths:{
+    guilty:'#07 opened the inner containment seal at 03:40 to prove CV-9 was survivable, then sold the strain to an outside lab by encrypted burst at 03:55. Commander Hollis cut her budget, but he did not release the pathogen.',
+    innocent:'#07 was telling the truth: the outer seal failed because Hollis refused to fund scrubber maintenance for eleven months. The radio burst was a data backup to a colleague, not a sale. The commander had the incident report altered.'
+  },
+  texts:{
+    lockGuilty:{t:'CONTAINMENT BREACH ATTRIBUTED',tag:'CASE CLOSED · CONVICTION',x:'She was cold to the last sentence. The seal log, the vial, and a transmission that priced a pathogen by the millilitre put her in the brig.'},
+    lockInnocent:{t:'WRONGFUL DETENTION',tag:'SCAPEGOAT IN THE BRIG',x:'You convicted the woman who warned them. Hollis kept his budget and his name, and the scrubbers that failed are still failing.'},
+    releaseGuilty:{t:'SHE WALKED',tag:'SUSPECT RELEASED · LAB SEALED',x:'She leaves with her notebook and a polite nod. Three weeks later another station reports the same strain. The paper trail died in that room.'},
+    releaseInnocent:{t:'CASE DISMISSED',tag:'CORRECT CALL · NO CHARGE',x:'You read the rooms right. Rostova was reckless with a ledger and honest about a seal. The commander was the one with something buried.'}
+  }
+};
+
+/* ---------------- CASE 01 · SUSPECT #04 · MARCUS VANCE ---------------- */
+CASES.c01 = {
+  id:'c01', no:'04-Δ', num:'#04', name:'Marcus Vance', role:'LEAD ENGINEER · MAINTENANCE DIVISION',
+  diff:'EASY', diffClass:'easy',
+  charge:'Sabotage of the main generator. The coolant seal was cut by hand two hours before the blast.',
+  open:['STATION ARGUS-9 · DECKS 1–4 ON EMERGENCY POWER · OUTSIDE TEMPERATURE −41°C',
+        'SUBJECT #04 SEATED · WRIST SENSOR PAIRED · BASELINE 78 BPM'],
+  intro:'I have been awake for nineteen hours, detective. The station has maybe six left before the batteries give out. So ask me what you want to ask me.',
+  tip:'TIP: enter evidence from the locker to break the account. Watch the heart rate.',
+  frameRe:/vance|doctor\b/, 
+  lies:{ alibi:LIES_04.pipes, where:LIES_04.where, frame:LIES_04.vance, incident:LIES_04.generator,
+         deny:LIES_04.deny, crack:LIES_04.crack, confess:LIES_04.confessish,
+         why:['Motive. I have a pension, a bunk, and a station that needs me. What would I gain?'] },
+  evidence:EVIDENCE_04, prompt:PROMPT_04,
+  truths:{
+    guilty:'#04 ruptured the generator coolant seal by hand to force an evacuation, using the chaos to wipe the lab archive and cover three years of stolen research data. Dr. Vance was innocent of everything except bad sign-offs.',
+    innocent:'#04 was telling the truth: the seal failed from deferred maintenance he had reported twice and been overruled on. The archive data was taken by the station commander, who needed the audit trail to disappear.'
+  },
+  texts:{
+    lockGuilty:{t:'SABOTEUR SECURED',tag:'CASE CLOSED · CONVICTION',x:'Two exhibits, two contradictions, and a heart rate that never recovered. #04 goes in the brig and the station gets its answer.'},
+    lockInnocent:{t:'WRONGFUL DETENTION',tag:'INNOCENT MAN IN THE BRIG',x:'The evidence fit, but it fit the wrong man. #04 was overruled on that seal for two winters. You convicted a whistle-blower of his own maintenance report.'},
+    releaseGuilty:{t:'HE WALKED',tag:'SUSPECT RELEASED · EVIDENCE MISLAID',x:'#04 walks out under escort, and the coolant seal is quietly replaced by morning. The archive stays empty. You had him and you let him go.'},
+    releaseInnocent:{t:'CASE DISMISSED',tag:'CORRECT CALL · NO CHARGE',x:'You read the room right. #04 was a tired engineer with a stamped work order, not a saboteur. The real thief was never in that chair.'}
+  }
+};
+
+/* ---------------- per-case probing topics ---------------- */
+CASES.c01.topics = [
+  { re:/wrench|blood/, d:16, lines:["Blood? It is grease and rust. You put a wrench in a housing full of hot metal and tell me what colour your hands come out."] },
+  { re:/hard\s?drive|data|archive|lab|copy/, d:19, lines:["I do not go in the lab. That is Vance's deck, not mine. Whatever is missing from his archive is his problem."] },
+  { re:/camera|footage|recording/, d:17, lines:["Cameras. Of course. The one thing on this station that never needs a repair, and it was pointed at the wrong corridor."] },
+  { re:/generator|explos|blast|housing|fire|blew/, d:13, lines:LIES_04.generator }
+];
+CASES.c01.greet = 'Detective. It is three in the morning and the station is running on batteries. Ask what you came to ask.';
+CASES.c01.deflect = 'I do not follow. Say it plainly. My hands are still cold and I am tired of this room.';
+
+CASES.c02.topics = [
+  { re:/pathogen|containment|strain|culture|sample|seal|filter|scrubber|lab 3/, d:18, lines:[
+    'A seal failed. Seals fail when the pressure cycle runs unfunded for a year. That is arithmetic, not sabotage.',
+    'If there is pathogen in that corridor it walked out on a boot or a filter housing, not through my hands.',
+    'Containment breach means containment failed. Ask who stopped paying for containment.'] },
+  { re:/radio|transmission|outside|sell|buyer|price/, d:20, lines:[
+    'My transmissions are research correspondence. You would not understand the encryption, let alone the content.',
+    'I share data with colleagues. That is what scientists do with data, detective.'] }
+];
+CASES.c02.greet = 'Detective. You are breathing too fast for someone who has been in this room four minutes.';
+CASES.c02.deflect = 'That is not a question, it is a mood. Ask me something I can answer with a number.';
+
+CASES.c03.topics = [
+  { re:/record|chart|file|medical|infection|quarantine|airlock|body|autopsy|memory|core|log/, d:19, lines:[
+    'No record was falsified. The record was corrected. Those are different operations.',
+    'Infection aboard a closed station is a social problem, not a medical one. I managed the social problem.',
+    'You are describing an error in a system that does not make errors. Consider the alternative.'] }
+];
+CASES.c03.greet = 'Detective. You are eleven minutes late. I have already reviewed your service record.';
+CASES.c03.deflect = 'Your question contains an assumption. I will not answer an assumption.';
+
+
 let awaitingEvidenceReaction = null;
 
 async function presentEvidence(key) {
@@ -606,16 +960,16 @@ async function presentEvidence(key) {
   if (btn) btn.classList.add('used');
   addLine('DET', '▸ PRESENTS EVIDENCE: ' + ev.label, 'detective');
   sysLog('EXHIBIT LOGGED — ' + ev.label + ' · ' + evCount() + '/3 in the record');
-  spike(ev.spike);
+  spike(ev.delta != null ? ev.delta : ev.spike);
 
   await sleep(320);
   showTyping(true);
-  const reply = ev.reactions[Math.floor(Math.random() * ev.reactions.length)];
+  const reply = ev.reply || ev.reactions[Math.floor(Math.random() * (ev.reactions || ['']).length)];
   showTyping(false);
   await sleep(200);
   await typeLine(reply);
 
-  const caught = contraAdd('ev_' + key, ev.label + ' sits against his account');
+  const caught = contraAdd(ev.contraKey ? 'ev_' + ev.contraKey : 'ev_' + key, ev.reason || (ev.label + ' sits against the account'));
   if (caught) sysLog('HIS ACCOUNT NO LONGER HOLDS. Watch the wristband.');
   if (evCount() === 3) sysLog('ALL THREE EXHIBITS ENTERED. The record is complete.');
   S.busy = false;
@@ -673,34 +1027,31 @@ async function ask() {
 const TRUTH = 'REALITY: #04 ruptured the generator coolant seal to trigger an evacuation that would cover nine years of stolen cryo research being copied off the archive. The Sector B pipe work was fabricated to give him a reason to be out of his bunk, and Dr. Vance was in the lab that night purely by coincidence, doing exactly the boring paperwork he said he was doing.';
 
 function report(kind) {
+  const C = CASES[S.caseId];
   const ev = evCount(), contras = S.contra, qs = S.qs;
-  let title, tag, text, truthColor = '#5c2626';
-  const caught = ev >= 2 && contras >= 2;
+  const strong = ev >= 2 && contras >= 2;
+  let title, tag, text, good = false;
 
   if (kind === 'lock') {
-    if (caught) {
-      title = 'SABOTEUR SECURED'; tag = 'VERDICT: DETENTION · CASE CLOSED';
-      text = 'You held him to his own timeline until it could not stand. Two exhibits and two contradictions is enough for the board: Suspect #04 is charged with the destruction of the main generator and the theft of nine years of station research. He stopped asking for a lawyer somewhere around the third contradiction.';
-      truthColor = '#2c6b4e';
-    } else if (ev >= 1 || contras >= 1) {
-      title = 'DETENTION WITHOUT CAUSE'; tag = 'VERDICT: INSUFFICIENT RECORD';
-      text = 'You locked him up on instinct, and the board will not carry it. With ' + ev + ' exhibit' + (ev === 1 ? '' : 's') + ' and ' + contras + ' contradiction' + (contras === 1 ? '' : 's') + ' on the record, the case fails review at dawn and he walks out with a grievance and a lawyer.';
+    if (!strong) {
+      title = 'INSUFFICIENT RECORD';
+      tag = 'VERDICT: DETENTION FAILS REVIEW';
+      text = 'You signed a detention order on ' + ev + ' exhibit' + (ev === 1 ? '' : 's') + ' and ' + contras +
+        ' contradiction' + (contras === 1 ? '' : 's') + '. The board will not carry it past dawn, and the file becomes a note about your judgment rather than their guilt.' +
+        (S.guilty ? '' : ' The worst part is that this one was innocent.');
+    } else if (S.guilty) {
+      const t = C.texts.lockGuilty; title = t.t; tag = t.tag; text = t.x; good = true;
     } else {
-      title = 'CASE DISMISSED'; tag = 'VERDICT: NO RECORD';
-      text = 'You signed the detention order with an empty file. There was nothing in the record: no exhibits entered, no contradictions caught. The board releases him within the hour and the file becomes a note about your judgment, not his guilt.';
+      const t = C.texts.lockInnocent; title = t.t; tag = t.tag; text = t.x;
     }
   } else {
-    if (caught) {
-      title = 'HE WALKED'; tag = 'VERDICT: RELEASED · SABOTEUR AT LARGE';
-      text = 'You had him. Two exhibits, two contradictions, and then you opened the door. He was on the supply lift before the shift change, and the station will spend the winter explaining to the board how a man it had already broken walked out of an interrogation room.';
-    } else {
-      title = 'RELEASED WITHOUT ANSWER'; tag = 'VERDICT: RELEASED';
-      text = 'You let him go with nothing proven. He thanked you, which is the worst part. Whatever happened in that generator housing is now a line in an insurance file, and the man who knows the truth is asleep in his own bunk two decks down.';
-    }
+    const t = S.guilty ? C.texts.releaseGuilty : C.texts.releaseInnocent;
+    title = t.t; tag = t.tag; text = t.x; good = !S.guilty;
   }
+  if (S.randomized) tag += ' · RANDOMIZED DOCKET';
 
   $('#verdictTitle').textContent = title;
-  $('#verdictTitle').style.color = kind === 'lock' && caught ? '#5fd39a' : '#e07474';
+  $('#verdictTitle').style.color = good ? '#5fd39a' : '#e07474';
   $('#verdictTag').textContent = tag;
   $('#verdictText').textContent = text;
   $('#rEv').textContent = ev + ' / 3';
@@ -708,11 +1059,14 @@ function report(kind) {
   $('#rBpm').textContent = Math.round(S.peak) + ' BPM';
   $('#rTime').textContent = fmt(Date.now() - S.t0);
   $('#rQs').textContent = qs;
+  $('#rHead').textContent = 'STATION ARGUS-9 · CASE FILE ' + C.no + ' · MISSION REPORT';
+  $('#rSuspect').textContent = C.num + ' — ' + C.role;
   const truthEl = $('#truth');
-  truthEl.textContent = TRUTH;
-  truthEl.style.borderColor = truthColor;
-  $('#modal').classList.add('on');
+  truthEl.textContent = 'TRUTH: ' + C.truths[S.guilty ? 'guilty' : 'innocent'];
+  truthEl.style.borderColor = good ? '#2c6b4e' : '#5c2626';
   S.over = true;
+  $('#modal').classList.add('on');
+  if (good) sfxBeep(); else sfxBuzz();
 }
 
 /* ============================================================
@@ -813,7 +1167,7 @@ function runLogicTests() {
   return { pass, total: rows.length };
 }
 
-if (typeof window !== 'undefined') window.__AA = { S, offlineBrain, runLogicTests, report, contraAdd };
+if (typeof window !== 'undefined') window.__AA = { S, CASES, setCase, buildDossier, offlineBrain, runLogicTests, report, contraAdd };
 (function wireDebug(){
   const btn = $('#dbgBtn'), panel = $('#dbg');
   if (!btn || !panel) return;
@@ -851,15 +1205,31 @@ $('#connect').onclick = async () => {
 };
 
 /* ---------- cold open ---------- */
-(async function coldOpen() {
-  sysLog('STATION ARGUS-9 · DECKS 1–4 ON EMERGENCY POWER · OUTSIDE TEMPERATURE −41°C');
-  sysLog('SUBJECT #04 SEATED · WRIST SENSOR PAIRED · BASELINE 78 BPM');
-  await sleep(500);
-  addLine('DET', '[You take the chair opposite him. The generator is still smouldering two decks down.]', 'system');
-  await sleep(400);
-  await typeLine("I have been awake for nineteen hours, detective. The station has maybe six left before the batteries give out. So ask me what you want to ask me.");
-  sysLog('TIP: enter evidence from the locker to break his account. Watch the heart rate.');
-})();
+async function coldOpen(C) {
+  C.open.forEach(l => sysLog(l));
+  await sleep(420);
+  addLine('DET', '[You take the chair opposite ' + (C.num === '#09' ? 'it' : 'them') + '. The station is running on batteries.]', 'system');
+  await sleep(320);
+  await typeLine(C.intro);
+  sysLog(C.tip);
+}
+
+/* ---------- boot: title screen first ---------- */
+buildDossier();
+S.caseId = 'c01'; S.guilty = true;
+LIES = CASES.c01.lies; EVIDENCE = CASES.c01.evidence; ACTIVE_PROMPT = CASES.c01.prompt;
+$('#btnBegin').onclick = () => { sfxClick(); setCase('c01'); };
+$('#btnCases').onclick = () => { sfxClick(); buildDossier(); showScreen('dossier'); };
+$('#btnHow').onclick = () => { sfxClick(); $('#briefing').classList.add('on'); };
+$('#briefClose').onclick = () => { sfxClick(); $('#briefing').classList.remove('on'); };
+$('#dossBack').onclick = () => { sfxClick(); $('#dossier').classList.remove('on'); showScreen('titleScreen'); };
+$('#navFiles').onclick = () => { sfxClick(); buildDossier(); showScreen('dossier'); };
+$('#navSfx').onclick = () => {
+  SFX.on = !SFX.on;
+  $('#navSfx').textContent = 'SOUND FX: ' + (SFX.on ? 'ON' : 'OFF');
+  $('#navSfx').classList.toggle('on', SFX.on);
+  if (SFX.on) sfxClick();
+};
 </script>
 </body>
 </html>

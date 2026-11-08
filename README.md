@@ -39,3 +39,12 @@ denial while composed, cracking under high stress, deflection on unknown input, 
 confession at any stress level, every reply within 2-3 sentences, contradiction cap at 3.
 
 Headless: `npm install && npm test`
+
+## 2.0 — Title screen, case files, randomized mode
+
+- **Title screen**: ARTIFICIAL ALIBI splash with CRT scanlines, blinking SECURE CONNECTION ESTABLISHED, and menu (Begin, Select Case File, How To Play / Briefing)
+- **Three case files**: 01 Marcus Vance (easy, generator sabotage), 02 Dr. Elena Rostova (medium, Lab 3 pathogen), 03 Unit K-7 (hard, falsified medical records). Each has its own 3 exhibits, dialogue bank, truth and four verdict outcomes.
+- **Randomized mystery mode**: random suspect AND random guilt. Every exhibit still lands, but the verdict is a real decision — lock an innocent and the report says so.
+- **Nav**: ← CASE FILES returns to the docket at any time; SOUND FX toggle drives synthesised keyboard clicks, BPM beeps and a contradiction buzzer (WebAudio, no assets).
+
+Tests: `npm test` runs the nine logic checks plus the screen/case/verdict flow.
