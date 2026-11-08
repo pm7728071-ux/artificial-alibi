@@ -88,3 +88,21 @@ Deep link: `#room`.
   prosody, a scored voice cast (prefers Google/Neural/Natural voices), tension-driven
   pitch and pace, punctuation pauses and slight per-line variation. No more flat reading.
 - Launch kit, store copy, trailer beats and screenshot list: `docs/LAUNCH.md`
+
+## 3.1 — Human prosody pass
+
+Speech is now planned as **breath groups**, not sentences: replies split at commas, semicolons,
+colons and dashes to produce the short phrases a person actually breathes between. Each phrase
+carries its own pitch and rate from a model:
+
+- **Declination** — pitch settles across the reply (1.05 down to 0.95), the single strongest
+  cue that separates speech from a reading robot.
+- **Question lift** (+0.07) and **exclamation punch** (+0.05), applied per phrase.
+- **Pause grammar** — 80ms after a comma, 150ms after a colon, 240ms after a full stop,
+  400ms after an ellipsis, each jittered ±20% so cadence is never metronomic.
+- **Rate floor** — never slower than 0.88; very slow TTS is the biggest robotic tell.
+- **Emphasis** — ALL-CAPS words get pitch and a slower rate.
+- **Room tone** — a filtered noise bed at ~1% sits under the voice, so lines occupy a space
+  instead of appearing in digital silence.
+- **Casting** — legacy engines (eSpeak, Pico, Zarvox and friends) are penalised heavily;
+  network/neural voices are preferred.

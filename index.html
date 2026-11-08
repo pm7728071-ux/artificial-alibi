@@ -797,6 +797,31 @@ function tone(freq, dur, type, vol, slideTo) {
     o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + dur);
   } catch (e) {}
 }
+/* ---------- room tone: a low noise bed under the voice so it isn't digital silence ---------- */
+const TONE = { node: null, gain: null };
+function startRoomTone() {
+  if (!SFX.on) return;
+  const ctx = actx(); if (!ctx) return;
+  try {
+    if (!TONE.node) {
+      const len = Math.floor(ctx.sampleRate * 2), buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < len; i++) { const white = Math.random() * 2 - 1; last = last * 0.97 + white * 0.03; d[i] = last * 0.6; }
+      const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 620;
+      const g = ctx.createGain(); g.gain.value = 0.0001;
+      src.connect(lp); lp.connect(g); g.connect(ctx.destination);
+      try { src.start(); } catch (e) {}
+      TONE.node = src; TONE.gain = g;
+    }
+    TONE.gain.gain.cancelScheduledValues(ctx.currentTime);
+    TONE.gain.gain.setTargetAtTime(0.012 * clamp(SET.volume, 0, 1), ctx.currentTime, 0.14);
+  } catch (e) {}
+}
+function stopRoomTone() {
+  const ctx = actx(); if (!ctx || !TONE.gain) return;
+  try { TONE.gain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.2); } catch (e) {}
+}
 const sfxClick = () => tone(1200 + Math.random() * 260, 0.02, 'square', 0.022);
 const sfxBeep  = () => { tone(880, 0.05, 'sine', 0.05); setTimeout(() => tone(1180, 0.05, 'sine', 0.04), 60); };
 const sfxBuzz  = () => { tone(148, 0.30, 'sawtooth', 0.055, 82); setTimeout(() => tone(112, 0.22, 'square', 0.04), 90); };
@@ -814,15 +839,16 @@ let speechGen = 0;
 
 /* voice casting: prefer higher-quality English voices, matched to the character */
 const VOICES = {
-  c01: { pitch: 0.80, rate: 0.93, drift: 0.07, prefer: /(daniel|alex|david|guy|george|fred|ryan|male)/i },
-  c02: { pitch: 1.12, rate: 1.03, drift: 0.04, prefer: /(samantha|victoria|serena|karen|zira|aria|jenny|female)/i },
-  c03: { pitch: 0.98, rate: 0.97, drift: 0.02, prefer: /(google us english|aria|jenny|samantha|zira)/i }
+  c01: { pitch: 0.80, rate: 0.93, drift: 0.07, speedup: 0.10, rateMin: 0.88, prefer: /(daniel|alex|david|guy|george|fred|ryan|male)/i },
+  c02: { pitch: 1.12, rate: 1.03, drift: 0.04, speedup: 0.08, rateMin: 0.92, prefer: /(samantha|victoria|serena|karen|zira|aria|jenny|female)/i },
+  c03: { pitch: 0.98, rate: 0.97, drift: 0.02, speedup: 0.04, rateMin: 0.92, prefer: /(google us english|aria|jenny|samantha|zira)/i }
 };
 function scoreVoice(v, cfg) {
   if (!/^en/i.test(v.lang || '')) return -99;
   let s = 0;
   if (cfg.prefer.test(v.name || '')) s += 4;
   if (/google|natural|neural|premium|enhanced|online|wavenet|multilingual/i.test(v.name || '')) s += 3;
+  if (/espeak|festival|pico|compact|albert|zarvox|bells|trinoids|whisper/i.test(v.name || '')) s -= 6;
   if (v.localService === false) s += 1;
   if (/^en[-_]GB/i.test(v.lang)) s += 0.5;
   return s;
@@ -835,43 +861,68 @@ function pickVoice(caseId) {
     return vs.sort((a, b) => scoreVoice(b, cfg) - scoreVoice(a, cfg))[0] || null;
   } catch (e) { return null; }
 }
-/* split a reply into sentence chunks so each is performed, not read flat */
-function chunkSpeech(text) {
-  return String(text).replace(/\[[^\]]*\]/g, ' ').replace(/\s+/g, ' ').trim()
-    .match(/[^.!?…]+[.!?…]*/g) || [];
+/* prosody planner — breath groups rather than flat sentences */
+function planPhrases(text) {
+  const clean = String(text).replace(/\[[^\]]*\]/g, ' ').replace(/\s+/g, ' ').trim();
+  const rows = [];
+  const sentences = clean.match(/[^.!?…]+[.!?…]*/g) || [];
+  sentences.forEach(s => {
+    const marked = s.trim().replace(/([,;:—])/g, '$1|');
+    marked.split('|').forEach(piece => {
+      const t = piece.trim();
+      if (t.length < 2) return;
+      rows.push({ text: t, q: /\?$/.test(t), bang: /!$/.test(t), ell: /(…|\.\.\.)$/.test(t) });
+    });
+  });
+  const n = rows.length;
+  rows.forEach((p, i) => {
+    const last = i === n - 1;
+    let pause = 90;
+    if (p.ell) pause = 400;
+    else if (/[;:]$/.test(p.text)) pause = 150;
+    else if (/[,—]$/.test(p.text)) pause = 80;
+    else if (/[.!?…]$/.test(p.text)) pause = 240;
+    p.pauseAfter = last ? 0 : pause;
+    const decl = 1.05 - (n > 1 ? (i / (n - 1)) * 0.10 : 0);      // pitch settles across the reply
+    p.pitchMul = decl + (p.q ? 0.07 : 0) + (p.bang ? 0.05 : 0);   // questions lift, exclamations punch
+    p.rateMul = 1 - (i / Math.max(1, n)) * 0.04 + (p.q ? 0.02 : 0);
+    p.emph = /\b[A-Z]{3,}\b/.test(p.text);
+  });
+  return rows;
 }
 function speakLine(text) {
   if (!SFX.on || !SET.voiceOn || !SPEECH.supported) return;
-  const caseId = S.caseId;
-  const cfg = VOICES[caseId] || VOICES.c01;
-  const parts = chunkSpeech(text).filter(p => p.trim().length > 1);
-  if (!parts.length) return;
+  const caseId = S.caseId, cfg = VOICES[caseId] || VOICES.c01;
+  const plan = planPhrases(text);
+  if (!plan.length) return;
   const gen = ++speechGen;
   try { window.speechSynthesis.cancel(); } catch (e) {}
   const voice = pickVoice(caseId);
   const tension = clamp((S.stress || 0) / 100, 0, 1);
-  let i = 0;
   SPEECH.speaking = true;
+  startRoomTone();
+  let i = 0;
+  const finish = () => { SPEECH.speaking = false; stopRoomTone(); };
   const next = () => {
     if (gen !== speechGen) return;
-    if (i >= parts.length) { SPEECH.speaking = false; return; }
-    const raw = parts[i++].trim();
-    const loud = /\b[A-Z]{3,}\b/.test(raw);
-    const u = new SpeechSynthesisUtterance(raw);
+    if (i >= plan.length) { finish(); return; }
+    const ph = plan[i++];
+    const u = new SpeechSynthesisUtterance(ph.text);
     if (voice) u.voice = voice;
-    u.pitch = clamp(cfg.pitch + (loud ? 0.07 : 0) + tension * cfg.drift + (Math.random() - 0.5) * 0.03, 0.2, 1.9);
-    u.rate = clamp(cfg.rate + tension * 0.10 + (loud ? -0.04 : 0) + (Math.random() - 0.5) * 0.02, 0.6, 1.5);
-    u.volume = clamp(SET.volume, 0, 1);
+    u.pitch = clamp(cfg.pitch * ph.pitchMul + tension * cfg.drift + (ph.emph ? 0.05 : 0), 0.5, 1.6);
+    u.rate = clamp((cfg.rate + tension * cfg.speedup) * ph.rateMul, cfg.rateMin || 0.88, 1.35);
+    u.volume = clamp(SET.volume * (i === 1 ? 0.94 : 1), 0, 1);
     u.onstart = () => { SPEECH.speaking = true; };
     u.onboundary = () => { SPEECH.mouth = 1; };
-    u.onerror = () => { if (gen === speechGen) SPEECH.speaking = false; };
+    u.onerror = () => { if (gen === speechGen) finish(); };
     u.onend = () => {
       if (gen !== speechGen) return;
-      const pause = /[.!?…]$/.test(raw) ? 210 : 110;
-      setTimeout(next, pause);
+      if (!ph.pauseAfter) { finish(); return; }
+      const jitter = ph.pauseAfter * (0.85 + Math.random() * 0.4);
+      setTimeout(next, jitter + tension * 30);
     };
     SPEECH.u = u;
-    try { window.speechSynthesis.speak(u); } catch (e) { SPEECH.speaking = false; }
+    try { window.speechSynthesis.speak(u); } catch (e) { finish(); }
   };
   next();
 }
@@ -1590,7 +1641,7 @@ function runLogicTests() {
   return { pass, total: rows.length };
 }
 
-if (typeof window !== 'undefined') window.__AA = { S, CASES, setCase, buildDossier, offlineBrain, runLogicTests, report, contraAdd, monitorLive: true, SPEECH, REC, speakLine, stopSpeech };
+if (typeof window !== 'undefined') window.__AA = { S, CASES, setCase, buildDossier, offlineBrain, runLogicTests, report, contraAdd, monitorLive: true, SPEECH, REC, speakLine, stopSpeech, planPhrases };
 (function wireDebug(){
   const btn = $('#dbgBtn'), panel = $('#dbg');
   if (!btn || !panel) return;
