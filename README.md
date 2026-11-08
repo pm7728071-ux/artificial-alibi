@@ -26,3 +26,16 @@ years of cryo research. The Sector B pipe work was fabricated. Dr. Vance is inno
 
 Lock him up with at least 2 exhibits entered and 2 contradictions caught. Anything less and the
 case fails review; releasing him lets the saboteur walk.
+
+## Testing the interrogation logic
+
+The terminal ships with a built-in console. Press the **λ DEBUG** button (bottom left):
+
+- Live internals: brain mode, BPM/stress, contradictions, evidence, questions, last stress delta
+- **RUN LOGIC TESTS**: nine checks against a sandboxed copy of state, so your session is untouched
+
+Covered: alibi consistency, contradiction on repeated pressure, Dr. Vance blame behaviour,
+denial while composed, cracking under high stress, deflection on unknown input, no outright
+confession at any stress level, every reply within 2-3 sentences, contradiction cap at 3.
+
+Headless: `npm install && npm test`

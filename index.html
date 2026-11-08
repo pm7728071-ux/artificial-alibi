@@ -154,6 +154,22 @@ button.go{border-color:#2c6b4e;color:var(--green)}
   .cam{grid-template-columns:1fr auto}
   .cam .feed{display:none}
 }
+
+#dbgBtn{background:none;border:1px solid var(--line);color:var(--ink-dim);font:inherit;font-size:9.5px;letter-spacing:1.6px;padding:5px 9px;cursor:pointer;border-radius:2px}
+#dbgBtn.on{color:var(--amber);border-color:var(--amber)}
+#dbg{position:fixed;left:12px;bottom:12px;width:340px;max-width:calc(100vw - 24px);background:#070d13;border:1px solid var(--line);border-radius:3px;z-index:60;display:none;font-size:11px;box-shadow:0 10px 40px #000a}
+#dbg.on{display:block}
+#dbg header{padding:8px 10px;border-bottom:1px solid var(--line);color:var(--amber);font-size:9.5px;letter-spacing:2px;display:flex;justify-content:space-between}
+#dbg .grid{display:grid;grid-template-columns:1fr auto;gap:3px 10px;padding:9px 10px;border-bottom:1px solid #12202c}
+#dbg .grid span:nth-child(odd){color:var(--ink-dim)}
+#dbg .grid span:nth-child(even){color:var(--ink);text-align:right}
+#dbg .acts{display:flex;gap:6px;padding:9px 10px}
+#dbg button{flex:1;background:none;border:1px solid var(--line);color:var(--ink);font:inherit;font-size:10px;letter-spacing:1px;padding:6px;cursor:pointer;border-radius:2px}
+#dbg button:hover{border-color:var(--amber);color:var(--amber)}
+#dbg .out{max-height:150px;overflow:auto;padding:8px 10px;border-top:1px solid #12202c;font-size:10.5px;line-height:1.5;color:#8fa3ae}
+#dbg .out b{color:var(--green);font-weight:400}
+#dbg .out i{color:var(--red);font-style:normal}
+@media (max-width:900px){#dbgBtn{right:auto;left:12px;top:auto;bottom:12px}}
 </style>
 </head>
 <body>
@@ -244,6 +260,23 @@ button.go{border-color:#2c6b4e;color:var(--green)}
 </div>
 
 <!-- ============ MISSION REPORT ============ -->
+<button id="dbgBtn" title="Toggle interrogation-logic console">&#955; DEBUG</button>
+<div id="dbg">
+  <header><span>INTERROGATION LOGIC · CONSOLE</span><span id="dbgClose" style="cursor:pointer">&#10005;</span></header>
+  <div class="grid">
+    <span>brain</span><span id="dMode">offline</span>
+    <span>bpm / stress</span><span id="dBpm">78 / 20</span>
+    <span>contradictions</span><span id="dContra">0</span>
+    <span>evidence</span><span id="dEv">0 / 3</span>
+    <span>questions</span><span id="dQs">0</span>
+    <span>last delta</span><span id="dDelta">&mdash;</span>
+  </div>
+  <div class="acts">
+    <button id="dbgRun">RUN LOGIC TESTS</button>
+    <button id="dbgReset">RESET STATE</button>
+  </div>
+  <div class="out" id="dbgOut">Ready. Tests run on a sandboxed copy of the state, so your session is untouched.</div>
+</div>
 <div class="modal" id="modal">
   <div class="report">
     <header>STATION ARGUS-9 · CASE FILE 04-Δ · MISSION REPORT</header>
@@ -354,6 +387,7 @@ function tickVitals() {
 requestAnimationFrame(tickVitals);
 
 function spike(amount, why) {
+  S.lastSpike = Math.round(amount);
   S.stress = Math.min(100, S.stress + amount);
   S.bpm = Math.min(168, S.bpm + amount * 1.15);
   if (S.bpm > S.peak) S.peak = S.bpm;
@@ -405,18 +439,18 @@ el.clock.textContent = clockStr();
 const LIES = {
   pipes: [
     "I was in Sector B. The coolant pipe under the sub-floor had a hairline fracture. I had a torch and a spanner and nobody to hold the light.",
-    "Pipes. Sector B, like I already said. Two hours with my hands in freezing water. Check the work order, it is stamped.",
+    "Pipes. Sector B, like I already said. Two hours with my hands in freezing water and a stamped work order.",
     "Sector B. Sector B. How many times do you want me to say it, detective?"
   ],
   where: [
-    "Where was I? Down in Sector B, elbows deep in a coolant line. That is my whole night. That is all of it.",
-    "I told you. Pipes. Sector B. The station was screaming about pressure loss and I was the only engineer awake.",
-    "You keep asking the same question like the answer will change. It will not."
+    "Where was I? Down in Sector B, elbows deep in a coolant line. That is my whole night.",
+    "I told you. Pipes, Sector B. The station was screaming about pressure loss and I was the only engineer awake.",
+    "Sector B. Under the sub-floor. My torch died halfway and I finished the joint by feel."
   ],
   vance: [
     "Vance? Vance signs off on everything and touches nothing. Ask him why the archive bay was unlocked.",
-    "The doctor was in the lab all night. Ask him what he was copying at two in the morning.",
-    "Do not put his name in my mouth. He is the one with something to hide."
+    "Vance was in the lab all night. Ask him what he was copying at two in the morning.",
+    "Do not put Vance in my mouth. He is the one with something to hide."
   ],
   generator: [
     "The housing blew. Seal failure, most likely. Those units were due for a rebuild two winters ago and nobody signed the order.",
@@ -429,7 +463,8 @@ const LIES = {
     "Detective, I have been on this station nine years. Nine. Ask anyone."
   ],
   crack: [
-    "I did not... look. It was cold. My hands were shaking. That is all that is happening here.",
+    "You keep asking the same question like the answer will change. It will not.",
+    "I did not look. It was cold and my hands were shaking. That is all that is happening here.",
     "You think you can read a man off a wristband? That thing reads nothing. It reads the cold.",
     "Stop. Stop asking it like that."
   ],
@@ -443,7 +478,7 @@ const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 function contraAdd(key, reason) {
   if (S.contraKeys.has(key)) return false;
-  S.contraKeys.add(key); S.contra = S.contraKeys.size;
+  S.contraKeys.add(key); S.contra = Math.min(3, S.contraKeys.size);
   spike(9, 'CONTRADICTION LOGGED — ' + reason);
   return true;
 }
@@ -460,7 +495,7 @@ function offlineBrain(text) {
   else if (/generator|explos|blast|housing|fire|blew/.test(t)) { delta = 13; reply = pick(LIES.generator); }
   else if (/where|02|two in the morning|that night|alibi/.test(t)) { S.alibiTold++; delta = S.alibiTold > 1 ? 15 : 8; reply = S.alibiTold > 2 ? pick(LIES.crack) : pick(LIES.where); if (S.alibiTold > 2) contraAdd('repeat', 'the alibi shifted under repetition'); }
   else if (/pipe|plumb|sector b|leak|valve/.test(t)) { delta = 7; reply = pick(LIES.pipes); }
-  else if (/why|motive|reason|hate/.test(t)) { delta = 15; reply = "Motive. Listen to yourself. I have a pension, a bunk, and a station that needs me. What would I possibly gain?"; }
+  else if (/why|motive|reason|hate/.test(t)) { delta = 15; reply = "Motive. I have a pension, a bunk, and a station that needs me. What would I possibly gain?"; }
   else if (/you did|you sabotaged|confess|admit|liar|lying|bullshit|guilty/.test(t)) {
     delta = 21;
     if (S.stress > 62) { reply = pick(LIES.confessish); contraAdd('accuse', 'his denial collapsed into a half-admission'); }
@@ -532,7 +567,7 @@ const EVIDENCE = {
     reactions: [
       "That camera... it skips. The relay drops frames when the heaters cycle, everyone knows that.",
       "I was under the floor plates! The camera sees the corridor, not beneath it. Ask maintenance for the drawings.",
-      "Fine. I stepped out for air. Once. For ten minutes. That is not a crime on a station with no air."
+      "Fine. I stepped out for air once, for ten minutes. That is not a crime on a station with no air."
     ],
     spike: 26
   },
@@ -552,7 +587,7 @@ const EVIDENCE = {
     reactions: [
       "The drive has nothing to do with me. I fix pipes. Ask Vance what he was doing in the archive at two in the morning.",
       "Data goes missing on this station every week. Half the crew cannot log into their own terminals.",
-      "You want the truth? Fine. The archive door was propped open when I walked past. It was already empty."
+      "You want the truth? The archive door was propped open when I walked past. It was already empty."
     ],
     spike: 31
   }
@@ -695,6 +730,108 @@ document.querySelectorAll('.ev').forEach(b => b.onclick = () => presentEvidence(
 $('#lock').onclick = () => report('lock');
 $('#release').onclick = () => report('release');
 $('#replay').onclick = () => location.reload();
+
+/* ============================================================
+   DEBUG CONSOLE — interrogation logic testing
+   Tests run against a sandboxed copy of the state.
+   ============================================================ */
+function snap() {
+  return { stress:S.stress, bpm:S.bpm, contra:S.contra, peak:S.peak,
+           keys:new Set(S.contraKeys), vance:S.vanceBlamed, alibi:S.alibiTold, ev:{...S.evidence} };
+}
+function restore(s) {
+  S.stress=s.stress; S.bpm=s.bpm; S.contra=s.contra; S.peak=s.peak;
+  S.contraKeys=s.keys; S.vanceBlamed=s.vance; S.alibiTold=s.alibi; S.evidence=s.ev;
+}
+function say(text) { return offlineBrain(text); }
+function sentences(t) { return (String(t).match(/[.!?](\s|$)/g) || []).length || 1; }
+
+function runLogicTests() {
+  const base = snap();
+  const fresh = () => restore({ ...base, keys:new Set(base.keys), ev:{...base.ev} });
+  const rows = [];
+  const T = (name, fn) => {
+    fresh(); let ok = false, note = '';
+    try { const r = fn() || {}; ok = !!r.ok; note = r.note || ''; }
+    catch (e) { ok = false; note = 'threw: ' + e.message; }
+    rows.push({ name, ok, note });
+  };
+
+  T('alibi answers stay on Sector B / pipes', () => {
+    const r = say('Where were you at 02:14 that night?');
+    return { ok: /sector b|pipe|valve|corridor/i.test(r.reply), note: r.reply.slice(0, 48) };
+  });
+  T('repeated alibi pressure logs a contradiction', () => {
+    say('Where were you at 02:14?'); say('Where were you that night?'); say('Where were you?');
+    return { ok: S.contraKeys.has('repeat'), note: 'keys: ' + [...S.contraKeys].join(',') };
+  });
+  T('Dr. Vance is blamed when probed', () => {
+    const r = say('Did Dr. Vance touch the generator?');
+    return { ok: /vance/i.test(r.reply) && S.vanceBlamed > 0, note: 'blamed x' + S.vanceBlamed };
+  });
+  T('denial holds while composed (no easy crack)', () => {
+    S.stress = 25;
+    say('Admit it. You did this.');
+    return { ok: !S.contraKeys.has('accuse'), note: 'stress 25' };
+  });
+  T('accusation cracks him at high stress', () => {
+    S.stress = 85;
+    say('Admit it. You did this.');
+    return { ok: S.contraKeys.has('accuse'), note: 'stress 85' };
+  });
+  T('unknown input deflects instead of inventing', () => {
+    const r = say('What did you have for breakfast?');
+    return { ok: /do not follow|say it plainly/i.test(r.reply), note: r.reply.slice(0, 42) };
+  });
+  T('no reply confesses outright', () => {
+    const probes = ['You sabotaged it','Why did you do it','Tell me the truth','The drive is missing','Wrench','Admit it. You did this.'];
+    S.stress = 95;
+    for (const p of probes) {
+      const r = say(p);
+      if (/i (did it|sabotaged|blew (it|the)|killed)|i confess/i.test(r.reply))
+        return { ok:false, note:'confessed to: ' + p };
+    }
+    return { ok:true, note: probes.length + ' high-stress probes' };
+  });
+  T('every reply stays 2-3 sentences', () => {
+    const probes = ['Hi','Where were you?','Vance','Generator','Blood on the wrench','Pipe leak','Why','You did it','Random gibberish xyz'];
+    for (const p of probes) { const r = say(p); if (sentences(r.reply) > 3) return { ok:false, note:p + ' -> ' + sentences(r.reply) + ' sentences' }; }
+    return { ok:true, note: probes.length + ' replies checked' };
+  });
+  T('contradictions cap at 3', () => {
+    ['a','b','c','d','e'].forEach(k => contraAdd(k, 'test'));
+    return { ok: S.contra <= 3, note: 'contra=' + S.contra };
+  });
+
+  restore(base);
+  const pass = rows.filter(r => r.ok).length;
+  $('#dbgOut').innerHTML = rows.map(r =>
+    '<div>' + (r.ok ? '<b>PASS</b>' : '<i>FAIL</i>') + ' ' + r.name + (r.note ? ' <span style="opacity:.55">· ' + r.note + '</span>' : '') + '</div>'
+  ).join('') + '<div style="margin-top:6px;color:' + (pass === rows.length ? 'var(--green)' : 'var(--red)') + '">'
+    + pass + ' / ' + rows.length + ' passed</div>';
+  sysLog('LOGIC SELF-TEST: ' + pass + '/' + rows.length + ' checks passed.');
+  return { pass, total: rows.length };
+}
+
+if (typeof window !== 'undefined') window.__AA = { S, offlineBrain, runLogicTests, report, contraAdd };
+(function wireDebug(){
+  const btn = $('#dbgBtn'), panel = $('#dbg');
+  if (!btn || !panel) return;
+  btn.onclick = () => { panel.classList.toggle('on'); btn.classList.toggle('on', panel.classList.contains('on')); };
+  $('#dbgClose').onclick = () => { panel.classList.remove('on'); btn.classList.remove('on'); };
+  $('#dbgRun').onclick = runLogicTests;
+  $('#dbgReset').onclick = () => location.reload();
+  setInterval(() => {
+    if (!panel.classList.contains('on')) return;
+    $('#dMode').textContent = S.mode;
+    $('#dBpm').textContent = Math.round(S.bpm) + ' / ' + Math.round(S.stress);
+    $('#dContra').textContent = S.contra + ' / 3';
+    $('#dEv').textContent = evCount() + ' / 3';
+    $('#dQs').textContent = S.qs;
+    $('#dDelta').textContent = S.lastSpike == null ? '—' : '+' + S.lastSpike;
+  }, 500);
+})();
+
 
 $('#connect').onclick = async () => {
   const prov = $('#prov').value, key = $('#key').value.trim();

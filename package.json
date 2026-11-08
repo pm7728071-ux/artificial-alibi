@@ -1,0 +1,7 @@
+{
+  "name": "artificial-alibi",
+  "version": "1.1.0",
+  "description": "Retro sci-fi psychological interrogation game",
+  "scripts": { "test": "node tests/logic.test.js" },
+  "devDependencies": { "jsdom": "^24.0.0" }
+}
