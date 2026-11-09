@@ -355,6 +355,21 @@ button.go{border-color:#2c6b4e;color:var(--green)}
 .roomscene .sit img{filter:saturate(.86) contrast(1.12) brightness(1.04)}
 .roomscene .sit .plate{color:#9fb0b8;text-shadow:0 1px 6px #000}
 .rvignette{background:radial-gradient(ellipse at 50% 42%,transparent 40%,rgba(0,0,0,.78) 100%)}
+/* ---------- depth v4: window reads as a window, single lamp ---------- */
+.porthole{left:13%;top:15%;width:190px;height:132px;margin-left:0;border-radius:10px;
+ border:8px solid #2a3a43;background:
+  linear-gradient(160deg,rgba(200,240,255,.30),rgba(120,180,205,.10) 38%,rgba(20,45,60,.55)),
+  radial-gradient(circle at 30% 25%,#3d7288,#0a1a22 78%);
+ box-shadow:0 0 44px rgba(110,190,220,.16),inset 0 0 34px rgba(0,0,0,.85)}
+.porthole:after{content:'';position:absolute;inset:0;border-radius:4px;opacity:.55;
+ background-image:linear-gradient(115deg,rgba(255,255,255,.16) 0 2px,transparent 2px 26px);background-size:64px 100%}
+.forelamp{background:radial-gradient(circle,rgba(255,242,214,.26),rgba(255,228,186,.09) 40%,transparent 68%)}
+.wall{background:linear-gradient(180deg,#22323c 0%,#1a2831 46%,#111a21 100%)}
+.floor{background:
+ radial-gradient(ellipse at 50% 0%,rgba(210,236,248,.22),transparent 60%),
+ linear-gradient(#182530,#0a1015)}
+.table{background:linear-gradient(#3d515c,#1a2730 46%,#0b1217)}
+.roomstage{background:radial-gradient(ellipse at 50% -10%,#26404c,#070d12 70%)}
 </style>
 </head>
 <body>
